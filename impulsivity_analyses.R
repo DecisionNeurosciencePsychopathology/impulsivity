@@ -95,7 +95,7 @@ export2html(t1, "imp_chars_by_group.html")
 
 chars <- as.data.frame(df[, c(26:30,32:38)])
 #head(just_rois)
-cormat <- cor(na.omit(chars))
+# cormat <- cor(na.omit(chars))
 # pdf("trait correlations.pdf", width=14, height=14)
 cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
 
@@ -188,4 +188,69 @@ summary(m9)
 em <- emmeans(m9,"group_early")
 plot(em, horiz = F, comparisons = T)
 cld(em)
+
+# could try MANOVA
+# http://www.sthda.com/english/wiki/manova-test-in-r-multivariate-analysis-of-variance
+
+
+#value
+imp <-  df[, c(26:29,32:35,42)]
+#val_rois <- val_rois[,-grep("ACC",names(val_rois))]
+cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
+
+# Michelle to check all histograms for herself
+
+pdf("impulsivity correlations.pdf", width=14, height=14)
+corrplot(cors$r, cl.lim=c(-1,1),
+         method = "circle", tl.cex = 1.5, type = "upper", tl.col = 'black',
+         order = "AOE", diag = FALSE,
+         addCoef.col="black", addCoefasPercent = FALSE,
+         p.mat = cors$p, sig.level=0.05, insig = "blank")
+# p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
+dev.off()
+
+
+imp.pca = prcomp(na.omit(imp),scale = TRUE)
+# imp_pcas <- get_pca_ind(imp.pca)
+summary(imp.pca)
+plot(imp.pca,type = 'l')
+
+
+autoplot(imp.pca, loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3)
+
+# save factor scores
+# find IDs with nothing missing
+ids <-  na.omit(df[, c(1,26:29,32:35,42)])
+ids <- ids[,1]
+df$impPC1 <- NA
+df$impPC2 <- NA
+
+test <- imp.pca$x[,1]
+
+df$impPC1[is.element(df$ID, ids$ID)]<- imp.pca$x[,1]
+df$impPC2[is.element(df$ID, ids$ID)]<- imp.pca$x[,2]
+
+test <-  df[, c(26:29,32:35,42,48:49)]
+#val_rois <- val_rois[,-grep("ACC",names(val_rois))]
+cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
+
+# rerun linear model on first PC
+m10 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df)
+summary(m10)
+em <- emmeans(m10,"group_early")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+
+# by attempt lethality
+m11 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df)
+summary(m11)
+em <- emmeans(m11,"GROUP12467")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+
+# look at lethality for single trait measures
+
+# re-score delay discounting in case there is an error.  Low correlations suspicious.
+# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 
