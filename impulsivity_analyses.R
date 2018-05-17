@@ -70,6 +70,14 @@ View(test)
 
 df <- df[,c(1:7,9:45,8)]
 
+# recode the variable names
+df$UPPS_negU <- df$`UPPSP NEG URGENCY`
+df$UPPS_posU <- df$`UPPSP POS URGENCY`
+df$UPPS_premed <- df$`UPPSP LACK OF PREMED`
+df$UPPS_persev <- df$`UPPSP LACK OF PERSEV`
+
+df$age_first_att <- df$`AGE AT FIRST ATTEMPT`
+
 # just a prototype
 chars <- as.data.frame(df[, c(5,10:16,23)])
 c1 <-
@@ -264,7 +272,20 @@ anova(m12,m13,m14)
 # age of onset by lethality, obviously a relationship, partly obscured by greater # attempts in early-onset
 ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = `MAX LETHALITY`, color = sex, shape = `RACE TEXT`, linetype = `RACE TEXT`)) + geom_jitter() + geom_smooth(method = "gam")
 
+# and what about impulsivity vs.continuous age at first attempt?
+ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = impPC1, color = sex, linetype = `RACE TEXT`)) + geom_jitter() + geom_smooth(method = "gam")
+ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = impPC1)) + geom_jitter() + geom_smooth(method = "gam")
 
+
+# lethality vs. impulsivity -- very weak relationship, would not emphasize
+ggplot(df[df$GROUP1245==5,], aes(x = `MAX LETHALITY`,  y = impPC1, color = sex)) + geom_jitter() + geom_smooth(method = "gam")
+
+# recode the variable names
+
+# manova
+
+imps <- as.data.frame(df[, c(26:29,32:35)])
+summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UPPS_posU, UPPS_negU, UPPS_premed, UPPS_persev) ~ group_early + sex + age, data = df))
 # look at lethality for single trait measures
 
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
