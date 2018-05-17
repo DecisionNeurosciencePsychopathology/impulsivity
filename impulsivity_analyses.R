@@ -194,7 +194,8 @@ cld(em)
 
 
 #value
-imp <-  df[, c(26:29,32:35,42)]
+# also without discounting
+imp <-  df[, c(26:29,32:35)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
 
@@ -248,6 +249,17 @@ summary(m11)
 em <- emmeans(m11,"GROUP12467")
 plot(em, horiz = F, comparisons = T)
 cld(em)
+
+# do lethality and age of onset explain unique variance?
+# answer: neither explains too much variance within attempters
+m12 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df[df$GROUP1245==5,])
+summary(m12)
+m13 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df[df$GROUP1245==5,])
+summary(m13)
+anova(m12,m13)
+m14 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467 + group_early, data = df[df$GROUP1245==5,])
+summary(m14)
+anova(m12,m13,m14)
 
 # look at lethality for single trait measures
 
