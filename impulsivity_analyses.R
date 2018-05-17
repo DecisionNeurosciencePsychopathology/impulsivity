@@ -261,6 +261,10 @@ m14 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467 + group_early, data = df[d
 summary(m14)
 anova(m12,m13,m14)
 
+# age of onset by lethality, obviously a relationship, partly obscured by greater # attempts in early-onset
+ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = `MAX LETHALITY`, color = sex, shape = `RACE TEXT`, linetype = `RACE TEXT`)) + geom_jitter() + geom_smooth(method = "gam")
+
+
 # look at lethality for single trait measures
 
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
