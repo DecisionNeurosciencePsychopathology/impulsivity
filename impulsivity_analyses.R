@@ -1,6 +1,18 @@
 ## Michelle's impulsivity analyses
 
-setwd("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/")
+##install packages on new machine
+install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "tibble", "Hmisc",
+                   "nnet", "reshape2", "emmeans", "factoextra", "compareGroups", "effects", "VIM", "mice", "multcompView",
+                   "readxl", "lsmeans", "corrplot", "stringi", "psych"))
+
+#setwd("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/")
+
+#wd for desktop comp @ home
+#setwd("/home/bluebird/Desktop")
+
+#wd for UPMC desktop
+setwd("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting")
+
 library(readr)
 library(lme4)
 library(lmerTest)
@@ -13,7 +25,7 @@ library(Hmisc)
 library(nnet)
 library(reshape2)
 # library(ggbiplot)
-# library(corrplot)
+library(corrplot)
 library(emmeans)
 library(factoextra)
 # library(ggfortify)
@@ -26,9 +38,18 @@ library(VIM)
 library(mice)
 library(multcompView)
 library(readxl)
-#  read in data
-df <- read_excel("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+library(lsmeans)
+library(psych)
+library(corrplot)
 
+#  read in data
+#df <- read_excel("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+
+# Michelle desktop @ home
+#df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+
+#Michelle UPMC desktop
+df <- read_excel("impulsivity.updated.01-11-18.xlsx")
 View(df)
 
 df$ln_k <- log(df$MONEY)
@@ -36,7 +57,7 @@ df$ln_k <- log(df$MONEY)
 df$ln_k_excluding_nondiscounters <- df$ln_k
 nondiscounters <- df$ln_k < -10
 df$ln_k_excluding_nondiscounters[nondiscounters] <- NA
-hist(df$ln_k_excluding_nondiscounters)
+
 
 df$GROUP12467 <- as.factor(df$GROUP12467)
 df$GROUP1245 <- as.factor(df$GROUP1245)
@@ -109,9 +130,19 @@ cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
 
 # Michelle to check all histograms for herself
 
+hist(df$SPSI_ICSSUB, breaks=8)
+hist(df$BIS_COGNIT)
+hist(df$BIS_MOTOR, breaks=6)
+hist(df$BIS_NONPLAN, breaks=6)
+hist(df$`UPPSP NEG URGENCY`, breaks=6)
+hist(df$`UPPSP POS URGENCY`, breaks=4)
+hist(df$`UPPSP LACK OF PREMED`, breaks=6)
+hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
+hist(df$ln_k_excluding_nondiscounters, breaks=6)
 
+par(mfrow=c(1,1))
 corrplot(cors$r, cl.lim=c(-1,1),
-         method = "circle", tl.cex = 1.5, type = "upper", tl.col = 'black',
+         method = "circle", tl.cex = 1, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,
          addCoef.col="black", addCoefasPercent = FALSE,
          p.mat = cors$p, sig.level=0.05, insig = "blank")
