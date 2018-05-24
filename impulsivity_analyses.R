@@ -129,7 +129,7 @@ chars <- as.data.frame(df[, c(26:30,32:38)])
 cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
 
 # Michelle to check all histograms for herself
-
+par(mfrow=c(3,3))
 hist(df$SPSI_ICSSUB, breaks=8)
 hist(df$BIS_COGNIT)
 hist(df$BIS_MOTOR, breaks=6)
