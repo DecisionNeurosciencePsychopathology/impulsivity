@@ -321,4 +321,15 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
+money2 <- read_excel("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
+money2dat$Q[money2dat$Q == 1] <- 2
+money2dat$Q[money2dat$Q == 0] <- 1
+## Long to wide
 
+#Change questionnumber to character string
+as.character(money2dat$QuestionNumber)
+m2dwide <- reshape(money2dat,
+             idvar = ,
+             timevar = ,
+             direction = "wide")
