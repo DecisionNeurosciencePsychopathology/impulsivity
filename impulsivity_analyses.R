@@ -321,7 +321,8 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
-money2 <- read_excel("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+#money2 <- read_excel("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -329,7 +330,76 @@ money2dat$Q[money2dat$Q == 0] <- 1
 
 #Change questionnumber to character string
 as.character(money2dat$QuestionNumber)
-m2dwide <- reshape(money2dat,
-             idvar = ,
-             timevar = ,
-             direction = "wide")
+#reshape to fit syntax
+m2d_dates <- dcast(money2dat, ID + CDATE ~ QuestionNumber, value.var = "Q")
+#make unique identifier by date taken MCQ
+m2d_dates$subjID <- make.names(m2d_dates$ID,unique=T)
+#df compatible with syntax
+MCQdata <- m2d_dates[, c(33, 3:29)]
+#rename column headers
+colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
+#aaaaaaand undo the subjID MCQ add
+names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
+
+# load lookup tables
+lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+
+#Calculate unique value for each sequence of responses
+MCQdata$MCQ13 <- MCQdata$MCQ13*1
+MCQdata$MCQ20 <- MCQdata$MCQ20*2
+MCQdata$MCQ26 <- MCQdata$MCQ26*4
+MCQdata$MCQ22 <- MCQdata$MCQ22*8
+MCQdata$MCQ3 <- MCQdata$MCQ3*16
+MCQdata$MCQ18 <- MCQdata$MCQ18*32
+MCQdata$MCQ5 <- MCQdata$MCQ5*64
+MCQdata$MCQ7 <- MCQdata$MCQ7*128
+MCQdata$MCQ11 <- MCQdata$MCQ11*256
+MCQdata$SmlSeq <- with (MCQdata, MCQ13+MCQ20+MCQ26+MCQ22+MCQ3+MCQ18+MCQ5+MCQ7+MCQ11-510)
+
+MCQdata$MCQ1 <- MCQdata$MCQ1*1
+MCQdata$MCQ6 <- MCQdata$MCQ6*2
+MCQdata$MCQ24 <- MCQdata$MCQ24*4
+MCQdata$MCQ16 <- MCQdata$MCQ16*8
+MCQdata$MCQ10 <- MCQdata$MCQ10*16
+MCQdata$MCQ21 <- MCQdata$MCQ21*32
+MCQdata$MCQ14 <- MCQdata$MCQ14*64
+MCQdata$MCQ8 <- MCQdata$MCQ8*128
+MCQdata$MCQ27 <- MCQdata$MCQ27*256
+MCQdata$MedSeq <- with (MCQdata, MCQ1+MCQ6+MCQ24+MCQ16+MCQ10+MCQ21+MCQ14+MCQ8+MCQ27-510)
+
+MCQdata$MCQ9 <- MCQdata$MCQ9*1
+MCQdata$MCQ17 <- MCQdata$MCQ17*2
+MCQdata$MCQ12 <- MCQdata$MCQ12*4
+MCQdata$MCQ15 <- MCQdata$MCQ15*8
+MCQdata$MCQ2 <- MCQdata$MCQ2*16
+MCQdata$MCQ25 <- MCQdata$MCQ25*32
+MCQdata$MCQ23 <- MCQdata$MCQ23*64
+MCQdata$MCQ19 <- MCQdata$MCQ19*128
+MCQdata$MCQ4 <- MCQdata$MCQ4*256
+MCQdata$LrgSeq <- with (MCQdata, MCQ9+MCQ17+MCQ12+MCQ15+MCQ2+MCQ25+MCQ23+MCQ19+MCQ4-510)
+
+#Remove unwanted columns
+MCQdata[2:28] <- list(NULL)
+
+#Maintain row order
+MCQdata$id <- 1:nrow(MCQdata)
+
+#Merge in MCQindices from lookup table
+MCQdata <- (merge(lookup1, MCQdata, by = 'SmlSeq'))
+MCQdata <- (merge(lookup2, MCQdata, by = 'MedSeq'))
+MCQdata <- (merge(lookup3, MCQdata, by = 'LrgSeq'))
+
+#Return to the original order of rows
+MCQdata <- MCQdata[order(MCQdata$id),]
+head(MCQdata)
+
+#Arrange columns in ideal order
+MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
+
+#Save MCQ indices to a text file
+write.table(MCQdata, file="C:/Users/Michelle/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
+
+
+
