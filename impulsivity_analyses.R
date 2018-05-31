@@ -330,7 +330,7 @@ money2dat$Q[money2dat$Q == 0] <- 1
 
 #Change questionnumber to character string
 as.character(money2dat$QuestionNumber)
-#reshape to fit syntax
+#reshape to fit MCQsyntax
 m2d_dates <- dcast(money2dat, ID + CDATE ~ QuestionNumber, value.var = "Q")
 #make unique identifier by date taken MCQ
 m2d_dates$subjID <- make.names(m2d_dates$ID,unique=T)
@@ -400,6 +400,9 @@ MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
 
 #Save MCQ indices to a text file
 write.table(MCQdata, file="C:/Users/Michelle/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
+
+## need to fix for NA values, rerun analyses with baseline MCQ data
+## exclude low consistency pts? Find % of pts and ask Alex
 
 
 
