@@ -11,7 +11,7 @@ install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "ti
 #setwd("/home/bluebird/Desktop")
 
 #wd for UPMC desktop
-setwd("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting")
+setwd("C:/Users/perryma/Desktop")
 
 library(readr)
 library(lme4)
@@ -41,6 +41,8 @@ library(readxl)
 library(lsmeans)
 library(psych)
 library(corrplot)
+library(stringi)
+library(stringr)
 
 #  read in data
 #df <- read_excel("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
@@ -49,7 +51,7 @@ library(corrplot)
 #df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-df <- read_excel("impulsivity.updated.01-11-18.xlsx")
+df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 View(df)
 
 df$ln_k <- log(df$MONEY)
@@ -322,7 +324,7 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #money2 <- read_excel("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
-money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+money2 <- read_excel("C:/Users/perryma/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -330,21 +332,28 @@ money2dat$Q[money2dat$Q == 0] <- 1
 
 #Change questionnumber to character string
 as.character(money2dat$QuestionNumber)
+
 #reshape to fit MCQsyntax
 m2d_dates <- dcast(money2dat, ID + CDATE ~ QuestionNumber, value.var = "Q")
+
 #make unique identifier by date taken MCQ
 m2d_dates$subjID <- make.names(m2d_dates$ID,unique=T)
+m2d_dates$subjID <- str_replace(m2d_dates$subjID,"X","")
+MCQdata$subjID <- stri_replace_all_fixed(MCQdata$subjID,"X","")
+
 #df compatible with syntax
 MCQdata <- m2d_dates[, c(33, 3:29)]
+
 #rename column headers
 colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
+
 #aaaaaaand undo the subjID MCQ add
 names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 
 # load lookup tables
-lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
@@ -399,9 +408,11 @@ head(MCQdata)
 MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
 
 #Save MCQ indices to a text file
-write.table(MCQdata, file="C:/Users/Michelle/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
+write.table(MCQdata, file="C:/Users/perryma/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
 
 ## need to fix for NA values, rerun analyses with baseline MCQ data
+    ## two NA in 211147 2009-01-22 #16 and #18
+
 ## exclude low consistency pts? Find % of pts and ask Alex
 
 
