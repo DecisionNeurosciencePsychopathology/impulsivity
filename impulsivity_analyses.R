@@ -122,14 +122,6 @@ t1 <-
   )
 export2html(t1, "imp_chars_by_group.html")
 
-# correlations across impulsivity measures
-
-chars <- as.data.frame(df[, c(26:30,32:38)])
-#head(just_rois)
-# cormat <- cor(na.omit(chars))
-# pdf("trait correlations.pdf", width=14, height=14)
-cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
-
 # Michelle to check all histograms for herself
 par(mfrow=c(3,3))
 hist(df$SPSI_ICSSUB, breaks=8)
@@ -141,15 +133,27 @@ hist(df$`UPPSP POS URGENCY`, breaks=4)
 hist(df$`UPPSP LACK OF PREMED`, breaks=6)
 hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
 hist(df$ln_k_excluding_nondiscounters, breaks=6)
+hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
+hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
+
+# correlations across impulsivity measures
+
+chars <- as.data.frame(df[, c(26:30,32:38,42, 63)])
+#head(just_rois)
+# cormat <- cor(na.omit(chars))
+# pdf("trait correlations.pdf", width=14, height=14)
+cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
+
 
 par(mfrow=c(1,1))
+pdf("impulsivity k correlations.pdf", width=14, height=14)
 corrplot(cors$r, cl.lim=c(-1,1),
-         method = "circle", tl.cex = 1, type = "upper", tl.col = 'black',
-         order = "AOE", diag = FALSE,
+         method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
+         order = "AOE", diag = FALSE,  
          addCoef.col="black", addCoefasPercent = FALSE,
-         p.mat = cors$p, sig.level=0.05, insig = "blank")
+         p.mat = cors$p, sig.level=0.01, insig = "blank")
 # p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
-# dev.off()
+dev.off()
 
 # impulsivity vars by group
 chars <- as.data.frame(df[, c(26:30,32:35,42:43)])
@@ -240,7 +244,6 @@ imp <-  df[, c(26:29,32:35)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
 
-# Michelle to check all histograms for herself
 
 pdf("impulsivity correlations.pdf", width=14, height=14)
 corrplot(cors$r, cl.lim=c(-1,1),
@@ -338,12 +341,11 @@ m2d_dates <- dcast(money2dat, ID + CDATE ~ QuestionNumber, value.var = "Q")
 
 #make unique identifier by date taken MCQ
 m2d_dates$subjID <- make.names(m2d_dates$ID,unique=T)
-m2d_dates$subjID <- str_replace(m2d_dates$subjID,"X","")
-MCQdata$subjID <- stri_replace_all_fixed(MCQdata$subjID,"X","")
 
 #df compatible with syntax
 MCQdata <- m2d_dates[, c(33, 3:29)]
-
+MCQdata$subjID <- stri_replace_all_fixed(MCQdata$subjID,"X","")
+MCQdata$subjID <- stri_replace_all_fixed(MCQdata$subjID,".1","_2")
 #rename column headers
 colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 
@@ -366,7 +368,6 @@ MCQdata$MCQ5 <- MCQdata$MCQ5*64
 MCQdata$MCQ7 <- MCQdata$MCQ7*128
 MCQdata$MCQ11 <- MCQdata$MCQ11*256
 MCQdata$SmlSeq <- with (MCQdata, MCQ13+MCQ20+MCQ26+MCQ22+MCQ3+MCQ18+MCQ5+MCQ7+MCQ11-510)
-
 MCQdata$MCQ1 <- MCQdata$MCQ1*1
 MCQdata$MCQ6 <- MCQdata$MCQ6*2
 MCQdata$MCQ24 <- MCQdata$MCQ24*4
@@ -410,10 +411,68 @@ MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
 #Save MCQ indices to a text file
 write.table(MCQdata, file="C:/Users/perryma/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
 
-## need to fix for NA values, rerun analyses with baseline MCQ data
-    ## two NA in 211147 2009-01-22 #16 and #18
+## need to fix for NA values in primary rescoring? 
+## two NA in 211147 2009-01-22 #16 and #18 BUT completed MCQ 2x, has full dataset ~4 months later
+
 
 ## exclude low consistency pts? Find % of pts and ask Alex
 
+#add new K values to main df
+df$money_rescore <- MCQdata$MedK[match(df$ID,MCQdata$subjID)]
+df$MedCons <- MCQdata$MedCons[match(df$ID,MCQdata$subjID)]
+df$ln_k_rescore <- log(df$money_rescore)
+df$ln_k_rescore <- log(df$money_rescore)
+df$ln_k_compare <- ((df$ln_k_rescore-df$ln_k)/df$ln_k)*100
+money_compare <- df[, c("MONEY", "ln_k", "money_rescore", "ln_k_rescore")]
 
+#rerun LM for new K
+m15 <- lm(ln_k_rescore ~ age + EDUCATION + sex + group_early, data = df)
+summary(m15)
+em <- emmeans(m15,"group_early")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+
+#remove low consistency folks (there are 6 below 70%;47 below 80%)
+df$ln_k_consistent_liberal <- df$ln_k_rescore
+df$ln_k_consistent_conservative <- df$ln_k_rescore
+inconsistent_folks_liberal <- df$MedCons < 0.7
+inconsistent_folks_conservative <- df$MedCons < 0.8
+#check counts format: sum(z, na.rm=TRUE)
+df$ln_k_consistent_liberal[df$MedCons<0.75] <- NA
+df$ln_k_consistent_conservative[df$MedCons<0.8] <- NA
+
+m16 <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early, data = df)
+summary(m16)
+em <- emmeans(m16,"group_early")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+
+m17 <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early, data = df)
+summary(m17)
+em <- emmeans(m17,"group_early")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+
+#remove nondiscounters?
+df$ln_k_consistent_liberal_nonnd <- df$ln_k_consistent_liberal
+nondiscounters2 <- df$ln_k_consistent_liberal < -10
+df$ln_k_consistent_liberal_nonnd[nondiscounters] <- NA
+
+df$ln_k_consistent_cons_nonnd <- df$ln_k_consistent_conservative
+nondiscounters3 <- df$ln_k_consistent_conservative < -10
+df$ln_k_consistent_cons_nonnd[nondiscounters] <- NA
+
+m18 <- lm(ln_k_consistent_liberal_nonnd ~ age + EDUCATION + sex + group_early, data = df)
+summary(m18)
+em <- emmeans(m18,"group_early")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+#m18 shows significance for early onset & ide after controlling for consistency & nondiscounters
+
+m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df)
+summary(m19)
+em <- emmeans(m19,"group_early")
+plot(em, horiz = F, comparisons = T)
+cld(em)
+#m19 doesn't show anything too interesting, possibly not enough data to get clear results
 
