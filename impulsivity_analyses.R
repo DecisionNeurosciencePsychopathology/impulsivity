@@ -3,7 +3,7 @@
 ##install packages on new machine
 install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "tibble", "Hmisc",
                    "nnet", "reshape2", "emmeans", "factoextra", "compareGroups", "effects", "VIM", "mice", "multcompView",
-                   "readxl", "lsmeans", "corrplot", "stringi", "psych"))
+                   "readxl", "lsmeans", "corrplot", "stringi", "psych", "stringr"))
 
 #setwd("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/")
 
@@ -12,6 +12,9 @@ install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "ti
 
 #wd for UPMC desktop
 setwd("C:/Users/perryma/Desktop")
+
+#wd for Michelle laptop
+setwd("C:/Users/Michelle/Desktop")
 
 library(readr)
 library(lme4)
@@ -51,7 +54,11 @@ library(stringr)
 #df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+#df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+
+#Michelle laptop
+df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
+
 View(df)
 
 df$ln_k <- log(df$MONEY)
@@ -133,8 +140,16 @@ hist(df$`UPPSP POS URGENCY`, breaks=4)
 hist(df$`UPPSP LACK OF PREMED`, breaks=6)
 hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
 hist(df$ln_k_excluding_nondiscounters, breaks=6)
-hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
-hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
+
+boxplot(df$SPSI_ICSSUB)
+boxplot(df$BIS_COGNIT)
+boxplot(df$BIS_MOTOR)
+boxplot(df$BIS_NONPLAN)
+boxplot(df$'UPPSP NEG URGENCY')
+boxplot(df$'UPPSP POS URGENCY')
+boxplot(df$'UPPSP LACK OF PREMED')
+boxplot(df$`UPPSP LACK OF PERSEV`)
+boxplot(df$ln_k_excluding_nondiscounters)
 
 # correlations across impulsivity measures
 
@@ -327,7 +342,7 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #money2 <- read_excel("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
-money2 <- read_excel("C:/Users/perryma/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -353,9 +368,14 @@ colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 
 # load lookup tables
-lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+#lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+#lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+#lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+
+# Michelle laptop load lookup tables
+lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
@@ -476,3 +496,5 @@ plot(em, horiz = F, comparisons = T)
 cld(em)
 #m19 doesn't show anything too interesting, possibly not enough data to get clear results
 
+hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
+hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
