@@ -489,8 +489,11 @@ df$ln_k_consistent_cons_nonnd[nondiscounters] <- NA
 m18 <- lm(ln_k_consistent_liberal_nonnd ~ age + EDUCATION + sex + group_early, data = df)
 summary(m18)
 em18 <- emmeans(m18,"group_early")
+lm18 <- lsmeans(m18,"group_early")
+
 plot(em18, horiz = F, comparisons = T)
 cld(em18)
+cld(lm18)
 #m18 shows significance for early onset & ide after controlling for consistency & nondiscounters
 
 m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df, col = "red")
@@ -535,5 +538,93 @@ plot(em6, horiz=F, comparisons = T, main = "UPPSP POS", col = "honeydew3")
 plot(em7, horiz=F, comparisons = T, main = "UPPSP LACK PREMED", col = "honeydew2")
 plot(em8, horiz=F, comparisons = T, main = "UPPSP LACK PERSEV", col = "honeydew")
 plot(em18, horiz=F, comparisons = T, main = "lnK CONSIST", col = "seagreen")
+
+plot(lm18, horiz=F, comparisons = T, main = "lnK CONSIST", col = "seagreen")
+
+CLD_lm18 = cld(lm18,
+                      alpha=0.05,
+                      Letters=letters,
+                      adjust="tukey")
+CLD_lm18$.group=gsub(" ", "", CLD_lm18$.group)
+
+pd = position_dodge(.8)
+
+p1 <- ggplot(CLD_lm18,
+       aes(
+         x     = group_early,
+         y     = lsmean,
+         color = group_early,
+         label = .group
+       )) +
+  #  facet_wrap( ~ group_early) +
+  
+  geom_point(shape  = 15,
+             size   = 4,
+             #             colour = c("grey40", "grey60", "#CCCC00", "#FF9900", "#FF6600"),
+             position = pd) +
+  
+  geom_errorbar(
+    aes(ymin  =  lower.CL,
+        ymax  =  upper.CL),
+    width =  0.2,
+    size  =  0.7,
+    #    colour = c("grey40", "grey60", "#CCCC00", "#FF9900", "#FF6600"),
+    position = pd
+  ) +
+  theme_bw() +
+  theme(plot.title = element_text(size=20)) +
+  scale_x_discrete(labels=c("HC","DC","SI","eoSA","loSA")) +
+  theme(
+    #axis.title.x=element_blank(),
+    #axis.title.y = text(size=16), 
+    axis.title.x=element_text(size=16),
+    axis.title.y=element_text(size=16),
+    axis.text.x=element_text(size = 12),
+    axis.text.y=element_text(size = 12),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 12),
+    strip.text.x = element_text(size=14),
+    plot.title = element_text(size = 18)) +
+  #theme(legend.text = element_text(colour="black", size = 16)) +
+  #theme(legend.title = element_text(colour="black", size = 16, face = "bold")) +
+  scale_fill_discrete(labels=c("HC: healthy controls",
+                               "DC: depressed controls",
+                               "SI: suicidal ideators",
+                               "eoSA: early-onset attempters",
+                               "laSA: late-onset attempters")) +
+  # theme(axis.title.y=element_text(size=14),
+  #       axis.title.x=element_blank(),
+  #       axis.text.x=element_blank(),
+  #       axis.ticks.x=element_blank()) +
+  
+  ylab("Z-scores of NEO-FFI") +
+  xlab("study groups") +
+  ggtitle("Five factors: overall group differences") +
+  #         subtitle = "Linear regression model controlling for age and gender") +
+  # labs(
+  #   caption  = paste0(
+  #     "\n",
+  #     "Boxes indicate least square means.\n",
+  #     "Error bars indicate the 95% ",
+  #     "confidence interval of the least squares means. \n",
+  #     "Means sharing a letter are ",
+  #     "not significantly different ",
+  #     "(Tukey-adjusted pairwise comparisons).\n",
+  #     "Early-onset attempts are defined by age at first attempt 50 or less."
+#   ),
+#   hjust = 0.5
+# ) +
+geom_text(nudge_x = 0.2,
+          nudge_y = -0.2,
+          color   = "black") 
+#dev.off()
+
+#multiple plots together
+library(grid)
+library(gridExtra)
+grid.arrange(p1,p2,p3,p4,p5,
+             layout_matrix = matrix(c(1,2,3,4,5,5), ncol=3, byrow=TRUE))
+
+
 
 
