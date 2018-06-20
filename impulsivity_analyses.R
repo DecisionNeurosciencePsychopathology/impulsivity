@@ -14,7 +14,7 @@ install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "ti
 setwd("C:/Users/perryma/Desktop")
 
 #wd for Michelle laptop
-setwd("C:/Users/Michelle/Desktop")
+#setwd("C:/Users/Michelle/Desktop")
 
 library(readr)
 library(lme4)
@@ -54,10 +54,10 @@ library(stringr)
 #df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-#df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle laptop
-df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
+#df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
 
 View(df)
 
@@ -141,15 +141,15 @@ hist(df$`UPPSP LACK OF PREMED`, breaks=6)
 hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
 hist(df$ln_k_excluding_nondiscounters, breaks=6)
 
-boxplot(df$SPSI_ICSSUB)
-boxplot(df$BIS_COGNIT)
-boxplot(df$BIS_MOTOR)
-boxplot(df$BIS_NONPLAN)
-boxplot(df$'UPPSP NEG URGENCY')
-boxplot(df$'UPPSP POS URGENCY')
-boxplot(df$'UPPSP LACK OF PREMED')
-boxplot(df$`UPPSP LACK OF PERSEV`)
-boxplot(df$ln_k_excluding_nondiscounters)
+boxplot(df$SPSI_ICSSUB, main = "SPSI_ICSSUB")
+boxplot(df$BIS_COGNIT, main = "BIS_COGNIT")
+boxplot(df$BIS_MOTOR, main = "BIS_MOTOR")
+boxplot(df$BIS_NONPLAN, main = "BIS_NONPLAN")
+boxplot(df$'UPPSP NEG URGENCY', main = "UPPSP NEG")
+boxplot(df$'UPPSP POS URGENCY', main = "UPPSP POS")
+boxplot(df$'UPPSP LACK OF PREMED', main = "UPPSP LACK PREMED")
+boxplot(df$`UPPSP LACK OF PERSEV`, main = "UPPSP LACK PERSEV")
+boxplot(df$ln_k_excluding_nondiscounters, main = "lnK")
 
 # correlations across impulsivity measures
 
@@ -195,59 +195,60 @@ export2html(t2, "imp_measures_by_group.html")
 # build a linear model
 df$age <- df$`BASELINE AGE`
 df$sex <- df$`GENDER TEXT`
+
 m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
 summary(m1)
-em <- emmeans(m1,"group_early")
-plot(em, horiz = F)
-CLD <- cld(em)
+em1 <- emmeans(m1,"group_early")
+plot(em1, horiz = F)
+CLD <- cld(em1)
 
 m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
 summary(m2)
-em <- emmeans(m2,"group_early")
-plot(em, horiz = F)
-cld(em)
+em2 <- emmeans(m2,"group_early")
+plot(em2, horiz = F)
+cld(em2)
 
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 summary(m3)
-em <- emmeans(m3,"group_early")
-plot(em, horiz = F)
-cld(em)
+em3 <- emmeans(m3,"group_early")
+plot(em3, horiz = F)
+cld(em3)
 
 m4 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 summary(m4)
-em <- emmeans(m4,"group_early")
-plot(em, horiz = F)
-cld(em)
+em4 <- emmeans(m4,"group_early")
+plot(em4, horiz = F)
+cld(em4)
 
 m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m5)
-em <- emmeans(m5,"group_early")
-plot(em, horiz = F)
-cld(em)
+em5 <- emmeans(m5,"group_early")
+plot(em5, horiz = F)
+cld(em5)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m6)
-em <- emmeans(m6,"group_early")
-plot(em, horiz = F)
-cld(em)
+em6 <- emmeans(m6,"group_early")
+plot(em6, horiz = F)
+cld(em6)
 
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m7)
-em <- emmeans(m7,"group_early")
-plot(em, horiz = F)
-cld(em)
+em7 <- emmeans(m7,"group_early")
+plot(em7, horiz = F)
+cld(em7)
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m8)
-em <- emmeans(m8,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em8 <- emmeans(m8,"group_early")
+plot(em8, horiz = F, comparisons = T)
+cld(em8)
 
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
 summary(m9)
-em <- emmeans(m9,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em9 <- emmeans(m9,"group_early")
+plot(em9, horiz = F, comparisons = T)
+cld(em9)
 
 # could try MANOVA
 # http://www.sthda.com/english/wiki/manova-test-in-r-multivariate-analysis-of-variance
@@ -298,16 +299,16 @@ cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 # rerun linear model on first PC
 m10 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df)
 summary(m10)
-em <- emmeans(m10,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em10 <- emmeans(m10,"group_early")
+plot(em10, horiz = F, comparisons = T)
+cld(em10)
 
 # by attempt lethality
 m11 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df)
 summary(m11)
-em <- emmeans(m11,"GROUP12467")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em11 <- emmeans(m11,"GROUP12467")
+plot(em11, horiz = F, comparisons = T)
+cld(em11)
 
 # do lethality and age of onset explain unique variance?
 # answer: neither explains too much variance within attempters
@@ -341,8 +342,11 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
-#money2 <- read_excel("C:/Users/perryma/Box/skinner/projects_analyses/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
-money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+#rescore values UPMC desktop
+money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+
+#rescore values michelle laptop
+#money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -367,15 +371,15 @@ colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 #aaaaaaand undo the subjID MCQ add
 names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 
-# load lookup tables
-#lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-#lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-#lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+# UPMC desktop load lookup tables
+lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 # Michelle laptop load lookup tables
-lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+#lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+#lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+#lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
@@ -448,9 +452,9 @@ money_compare <- df[, c("MONEY", "ln_k", "money_rescore", "ln_k_rescore")]
 #rerun LM for new K
 m15 <- lm(ln_k_rescore ~ age + EDUCATION + sex + group_early, data = df)
 summary(m15)
-em <- emmeans(m15,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em15 <- emmeans(m15,"group_early")
+plot(em15, horiz = F, comparisons = T)
+cld(em15)
 
 #remove low consistency folks (there are 6 below 70%;47 below 80%)
 df$ln_k_consistent_liberal <- df$ln_k_rescore
@@ -463,15 +467,15 @@ df$ln_k_consistent_conservative[df$MedCons<0.8] <- NA
 
 m16 <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early, data = df)
 summary(m16)
-em <- emmeans(m16,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em16 <- emmeans(m16,"group_early")
+plot(em16, horiz = F, comparisons = T)
+cld(em16)
 
 m17 <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early, data = df)
 summary(m17)
-em <- emmeans(m17,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em17 <- emmeans(m17,"group_early")
+plot(em17, horiz = F, comparisons = T)
+cld(em17)
 
 #remove nondiscounters?
 df$ln_k_consistent_liberal_nonnd <- df$ln_k_consistent_liberal
@@ -484,17 +488,52 @@ df$ln_k_consistent_cons_nonnd[nondiscounters] <- NA
 
 m18 <- lm(ln_k_consistent_liberal_nonnd ~ age + EDUCATION + sex + group_early, data = df)
 summary(m18)
-em <- emmeans(m18,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em18 <- emmeans(m18,"group_early")
+plot(em18, horiz = F, comparisons = T)
+cld(em18)
 #m18 shows significance for early onset & ide after controlling for consistency & nondiscounters
 
-m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df)
+m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df, col = "red")
 summary(m19)
-em <- emmeans(m19,"group_early")
-plot(em, horiz = F, comparisons = T)
-cld(em)
+em19 <- emmeans(m19,"group_early")
+plot(em19, horiz = F, comparisons = T)
+cld(em19)
 #m19 doesn't show anything too interesting, possibly not enough data to get clear results
 
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
+
+##rerun graphs for presentation
+par(mfrow=c(3,3))
+hist(df$SPSI_ICSSUB, breaks=8)
+hist(df$BIS_COGNIT)
+hist(df$BIS_MOTOR, breaks=6)
+hist(df$BIS_NONPLAN, breaks=6)
+hist(df$`UPPSP NEG URGENCY`, breaks=6)
+hist(df$`UPPSP POS URGENCY`, breaks=4)
+hist(df$`UPPSP LACK OF PREMED`, breaks=6)
+hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
+hist(df$ln_k_consistent_liberal_nonnd, breaks=6)
+
+boxplot(df$SPSI_ICSSUB, main = "SPSI_ICSSUB")
+boxplot(df$BIS_COGNIT, main = "BIS_COGNIT")
+boxplot(df$BIS_MOTOR, main = "BIS_MOTOR")
+boxplot(df$BIS_NONPLAN, main = "BIS_NONPLAN")
+boxplot(df$'UPPSP NEG URGENCY', main = "UPPSP NEG")
+boxplot(df$'UPPSP POS URGENCY', main = "UPPSP POS")
+boxplot(df$'UPPSP LACK OF PREMED', main = "UPPSP LACK PREMED")
+boxplot(df$'UPPSP LACK OF PERSEV', main = "UPPSP LACK PERSEV")
+boxplot(df$ln_k_consistent_liberal_nonnd, main = "lnK consist")
+
+
+plot(em1, horiz=F, comparisons = T, main = "SPSI_ICSSUB", col = 'lemonchiffon4')
+plot(em2, horiz=F, comparisons = T, main = "BIS_COGNIT", col = "lavender")
+plot(em3, horiz=F, comparisons = T, main = "BIS_MOTOR", col = "lavenderblush1")
+plot(em4, horiz=F, comparisons = T, main = "BIS_NONPLAN", col = "lavenderblush3")
+plot(em5, horiz=F, comparisons = T, main = "UPPSP NEG", col = "honeydew4")
+plot(em6, horiz=F, comparisons = T, main = "UPPSP POS", col = "honeydew3")
+plot(em7, horiz=F, comparisons = T, main = "UPPSP LACK PREMED", col = "honeydew2")
+plot(em8, horiz=F, comparisons = T, main = "UPPSP LACK PERSEV", col = "honeydew")
+plot(em18, horiz=F, comparisons = T, main = "lnK CONSIST", col = "seagreen")
+
+
