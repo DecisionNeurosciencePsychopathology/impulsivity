@@ -153,7 +153,7 @@ boxplot(df$ln_k_excluding_nondiscounters, main = "lnK")
 
 # correlations across impulsivity measures
 
-chars <- as.data.frame(df[, c(26:30,32:38,42, 63)])
+chars <- as.data.frame(df[, c(26:30,32:38,42)])
 #head(just_rois)
 # cormat <- cor(na.omit(chars))
 # pdf("trait correlations.pdf", width=14, height=14)
@@ -193,61 +193,63 @@ t2 <-
 export2html(t2, "imp_measures_by_group.html")
 
 # build a linear model
+emm_options(graphics.engine = "lattice")
 df$age <- df$`BASELINE AGE`
 df$sex <- df$`GENDER TEXT`
 
 m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
 summary(m1)
 em1 <- emmeans(m1,"group_early")
-plot(em1, horiz = F)
+plot(em1, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
 CLD <- cld(em1)
+
 
 m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
 summary(m2)
 em2 <- emmeans(m2,"group_early")
-plot(em2, horiz = F)
+plot(em2, horiz = F, comparisons = T, main = "BIS_NONPLAN")
 cld(em2)
 
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 summary(m3)
 em3 <- emmeans(m3,"group_early")
-plot(em3, horiz = F)
+plot(em3, horiz = F, comparisons = T, main = "BIS_COGNIT")
 cld(em3)
 
-m4 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
+m4 <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_early, data = df)
 summary(m4)
 em4 <- emmeans(m4,"group_early")
-plot(em4, horiz = F)
+plot(em4, horiz = F, comparisons = T, main = "BIS_MOTOR")
 cld(em4)
 
 m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m5)
 em5 <- emmeans(m5,"group_early")
-plot(em5, horiz = F)
+plot(em5, horiz = F, comparisons = T, main = "UPPSP_POS")
 cld(em5)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m6)
 em6 <- emmeans(m6,"group_early")
-plot(em6, horiz = F)
+plot(em6, horiz = F, comparisons = T, main = "UPPSP_NEG")
 cld(em6)
 
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m7)
 em7 <- emmeans(m7,"group_early")
-plot(em7, horiz = F)
+plot(em7, horiz = F, comparisons = T, main = "UPPSP_LPERS")
 cld(em7)
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
 summary(m8)
 em8 <- emmeans(m8,"group_early")
-plot(em8, horiz = F, comparisons = T)
+plot(em8, horiz = F, comparisons = T, main = "UPPSP_LPREM")
 cld(em8)
 
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
 summary(m9)
 em9 <- emmeans(m9,"group_early")
-plot(em9, horiz = F, comparisons = T)
+plot(em9, horiz = F, comparisons = T, main = "ln_K")
 cld(em9)
 
 # could try MANOVA
@@ -453,7 +455,7 @@ money_compare <- df[, c("MONEY", "ln_k", "money_rescore", "ln_k_rescore")]
 m15 <- lm(ln_k_rescore ~ age + EDUCATION + sex + group_early, data = df)
 summary(m15)
 em15 <- emmeans(m15,"group_early")
-plot(em15, horiz = F, comparisons = T)
+plot(em15, horiz = F, comparisons = T, main = "ln_K_rescore" )
 cld(em15)
 
 #remove low consistency folks (there are 6 below 70%;47 below 80%)
@@ -462,19 +464,19 @@ df$ln_k_consistent_conservative <- df$ln_k_rescore
 inconsistent_folks_liberal <- df$MedCons < 0.7
 inconsistent_folks_conservative <- df$MedCons < 0.8
 #check counts format: sum(z, na.rm=TRUE)
-df$ln_k_consistent_liberal[df$MedCons<0.75] <- NA
+df$ln_k_consistent_liberal[df$MedCons<0.7] <- NA
 df$ln_k_consistent_conservative[df$MedCons<0.8] <- NA
 
 m16 <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early, data = df)
 summary(m16)
 em16 <- emmeans(m16,"group_early")
-plot(em16, horiz = F, comparisons = T)
+plot(em16, horiz = F, comparisons = T, main = "ln_K_consislib")
 cld(em16)
 
 m17 <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early, data = df)
 summary(m17)
 em17 <- emmeans(m17,"group_early")
-plot(em17, horiz = F, comparisons = T)
+plot(em17, horiz = F, comparisons = T, main = "ln_K_consiscon")
 cld(em17)
 
 #remove nondiscounters?
@@ -491,115 +493,82 @@ summary(m18)
 em18 <- emmeans(m18,"group_early")
 lm18 <- lsmeans(m18,"group_early")
 
-plot(em18, horiz = F, comparisons = T)
+plot(em18, horiz = F, comparisons = T, main = "ln_k_consislib_nondis")
 cld(em18)
 cld(lm18)
-#m18 shows significance for early onset & ide after controlling for consistency & nondiscounters
+#m18 shows significance for early onset & ide after controlling for consistency & nondiscounters, not betweeen
+#groups but as coefficients (?)
 
 m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df, col = "red")
 summary(m19)
 em19 <- emmeans(m19,"group_early")
-plot(em19, horiz = F, comparisons = T)
+plot(em19, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
 cld(em19)
 #m19 doesn't show anything too interesting, possibly not enough data to get clear results
 
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
 
-##rerun graphs for presentation
-par(mfrow=c(3,3))
-hist(df$SPSI_ICSSUB, breaks=8)
-hist(df$BIS_COGNIT)
-hist(df$BIS_MOTOR, breaks=6)
-hist(df$BIS_NONPLAN, breaks=6)
-hist(df$`UPPSP NEG URGENCY`, breaks=6)
-hist(df$`UPPSP POS URGENCY`, breaks=4)
-hist(df$`UPPSP LACK OF PREMED`, breaks=6)
-hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
-hist(df$ln_k_consistent_liberal_nonnd, breaks=6)
 
-boxplot(df$SPSI_ICSSUB, main = "SPSI_ICSSUB")
-boxplot(df$BIS_COGNIT, main = "BIS_COGNIT")
-boxplot(df$BIS_MOTOR, main = "BIS_MOTOR")
-boxplot(df$BIS_NONPLAN, main = "BIS_NONPLAN")
-boxplot(df$'UPPSP NEG URGENCY', main = "UPPSP NEG")
-boxplot(df$'UPPSP POS URGENCY', main = "UPPSP POS")
-boxplot(df$'UPPSP LACK OF PREMED', main = "UPPSP LACK PREMED")
-boxplot(df$'UPPSP LACK OF PERSEV', main = "UPPSP LACK PERSEV")
-boxplot(df$ln_k_consistent_liberal_nonnd, main = "lnK consist")
+#CLD_lm18 = cld(lm18,
+#                      alpha=0.05,
+#                     Letters=letters,
+#                      adjust="tukey")
+#CLD_lm18$.group=gsub(" ", "", CLD_lm18$.group)
 
+#pd = position_dodge(.8)
 
-plot(em1, horiz=F, comparisons = T, main = "SPSI_ICSSUB", col = 'lemonchiffon4')
-plot(em2, horiz=F, comparisons = T, main = "BIS_COGNIT", col = "lavender")
-plot(em3, horiz=F, comparisons = T, main = "BIS_MOTOR", col = "lavenderblush1")
-plot(em4, horiz=F, comparisons = T, main = "BIS_NONPLAN", col = "lavenderblush3")
-plot(em5, horiz=F, comparisons = T, main = "UPPSP NEG", col = "honeydew4")
-plot(em6, horiz=F, comparisons = T, main = "UPPSP POS", col = "honeydew3")
-plot(em7, horiz=F, comparisons = T, main = "UPPSP LACK PREMED", col = "honeydew2")
-plot(em8, horiz=F, comparisons = T, main = "UPPSP LACK PERSEV", col = "honeydew")
-plot(em18, horiz=F, comparisons = T, main = "lnK CONSIST", col = "seagreen")
-
-plot(lm18, horiz=F, comparisons = T, main = "lnK CONSIST", col = "seagreen")
-
-CLD_lm18 = cld(lm18,
-                      alpha=0.05,
-                      Letters=letters,
-                      adjust="tukey")
-CLD_lm18$.group=gsub(" ", "", CLD_lm18$.group)
-
-pd = position_dodge(.8)
-
-p1 <- ggplot(CLD_lm18,
-       aes(
-         x     = group_early,
-         y     = lsmean,
-         color = group_early,
-         label = .group
-       )) +
+#p1 <- ggplot(CLD_lm18,
+ #      aes(
+  #       x     = group_early,
+   #      y     = lsmean,
+    #     color = group_early,
+     #    label = .group
+      # )) +
   #  facet_wrap( ~ group_early) +
   
-  geom_point(shape  = 15,
-             size   = 4,
+  #geom_point(shape  = 15,
+   #          size   = 4,
              #             colour = c("grey40", "grey60", "#CCCC00", "#FF9900", "#FF6600"),
-             position = pd) +
+    #         position = pd) +
   
-  geom_errorbar(
-    aes(ymin  =  lower.CL,
-        ymax  =  upper.CL),
-    width =  0.2,
-    size  =  0.7,
+  #geom_errorbar(
+   # aes(ymin  =  lower.CL,
+    #    ymax  =  upper.CL),
+  #  width =  0.2,
+   # size  =  0.7,
     #    colour = c("grey40", "grey60", "#CCCC00", "#FF9900", "#FF6600"),
-    position = pd
-  ) +
-  theme_bw() +
-  theme(plot.title = element_text(size=20)) +
-  scale_x_discrete(labels=c("HC","DC","SI","eoSA","loSA")) +
-  theme(
+    #position = pd
+  #) +
+#  theme_bw() +
+ # theme(plot.title = element_text(size=20)) +
+  #scale_x_discrete(labels=c("HC","DC","SI","eoSA","loSA")) +
+  #theme(
     #axis.title.x=element_blank(),
     #axis.title.y = text(size=16), 
-    axis.title.x=element_text(size=16),
-    axis.title.y=element_text(size=16),
-    axis.text.x=element_text(size = 12),
-    axis.text.y=element_text(size = 12),
-    legend.title = element_blank(),
-    legend.text = element_text(size = 12),
-    strip.text.x = element_text(size=14),
-    plot.title = element_text(size = 18)) +
+#    axis.title.x=element_text(size=16),
+#    axis.title.y=element_text(size=16),
+#    axis.text.x=element_text(size = 12),
+#    axis.text.y=element_text(size = 12),
+#    legend.title = element_blank(),
+##    legend.text = element_text(size = 12),
+#    strip.text.x = element_text(size=14),
+#    plot.title = element_text(size = 18)) +
   #theme(legend.text = element_text(colour="black", size = 16)) +
   #theme(legend.title = element_text(colour="black", size = 16, face = "bold")) +
-  scale_fill_discrete(labels=c("HC: healthy controls",
-                               "DC: depressed controls",
-                               "SI: suicidal ideators",
-                               "eoSA: early-onset attempters",
-                               "laSA: late-onset attempters")) +
+#  scale_fill_discrete(labels=c("HC: healthy controls",
+                              # "DC: depressed controls",
+                              # "SI: suicidal ideators",
+                              # "eoSA: early-onset attempters",
+                              # "laSA: late-onset attempters")) +
   # theme(axis.title.y=element_text(size=14),
   #       axis.title.x=element_blank(),
   #       axis.text.x=element_blank(),
   #       axis.ticks.x=element_blank()) +
   
-  ylab("Z-scores of NEO-FFI") +
-  xlab("study groups") +
-  ggtitle("Five factors: overall group differences") +
+#  ylab("Z-scores of NEO-FFI") +
+#  xlab("study groups") +
+#  ggtitle("Five factors: overall group differences") +
   #         subtitle = "Linear regression model controlling for age and gender") +
   # labs(
   #   caption  = paste0(
@@ -614,17 +583,122 @@ p1 <- ggplot(CLD_lm18,
 #   ),
 #   hjust = 0.5
 # ) +
-geom_text(nudge_x = 0.2,
-          nudge_y = -0.2,
-          color   = "black") 
+#geom_text(nudge_x = 0.2,
+          #nudge_y = -0.2,
+          #color   = "black") 
 #dev.off()
 
 #multiple plots together
-library(grid)
-library(gridExtra)
-grid.arrange(p1,p2,p3,p4,p5,
-             layout_matrix = matrix(c(1,2,3,4,5,5), ncol=3, byrow=TRUE))
+#library(grid)
+#library(gridExtra)
+#grid.arrange(p1,p2,p3,p4,p5,
+            # layout_matrix = matrix(c(1,2,3,4,5,5), ncol=3, byrow=TRUE))
 
 
+chars2 <- as.data.frame(df[, c(26:30,32:38,42,61)])
+#head(just_rois)
+# cormat <- cor(na.omit(chars))
+# pdf("trait correlations.pdf", width=14, height=14)
+cors <- corr.test(chars2, use = "pairwise",method="pearson", alpha=.05)
 
 
+par(mfrow=c(1,1))
+pdf("impulsivity k correlations compare.pdf", width=14, height=14)
+corrplot(cors$r, cl.lim=c(-1,1),
+         method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
+         order = "AOE", diag = FALSE,  
+         addCoef.col="black", addCoefasPercent = FALSE,
+         p.mat = cors$p, sig.level=0.01, insig = "blank")
+# p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
+dev.off()
+
+# impulsivity vars by group - that table is huge and rather uninformative...
+chars3 <- as.data.frame(df[, c(26:30,32:35,42:43, 57, 59:62)])
+c3 <-
+  compareGroups(
+    chars3,
+    y = df$group_early,
+    bivar = TRUE,
+    include.miss = FALSE
+  )
+t3 <-
+  createTable(
+    c3,
+    # hide = c(sex = "FEMALE", list(race = c(
+    #   "WHITE", "ASIAN PACIFIC"
+    # ))),
+    hide.no = 0,
+    digits = 1,
+    show.n = TRUE,
+    show.p.mul = TRUE
+  )
+export2html(t3, "imp_measures_by_group_pluskrescores.html")
+
+# impulsivity vars by group - only adding lnk rescore consistent conservative minus nondisc
+chars4 <- as.data.frame(df[, c(26:30,32:35,42:43, 62)])
+c4 <-
+  compareGroups(
+    chars4,
+    y = df$group_early,
+    bivar = TRUE,
+    include.miss = FALSE
+  )
+t4 <-
+  createTable(
+    c4,
+    # hide = c(sex = "FEMALE", list(race = c(
+    #   "WHITE", "ASIAN PACIFIC"
+    # ))),
+    hide.no = 0,
+    digits = 1,
+    show.n = TRUE,
+    show.p.mul = TRUE
+  )
+export2html(t4, "imp_measures_by_group_pluskrescores.html")
+
+
+# rerun correlations across impulsivity measures - all - the lesson is lnK doesn't really correlate with anything
+chars4 <- as.data.frame(df[, c(26:30,32:35,42, 43, 57, 59:62)])
+#head(just_rois)
+# cormat <- cor(na.omit(chars))
+# pdf("trait correlations.pdf", width=14, height=14)
+cors3 <- corr.test(chars4, use = "pairwise",method="pearson", alpha=.05)
+
+
+par(mfrow=c(1,1))
+pdf("impulsivity k correlations big.pdf", width=14, height=14)
+corrplot(cors3$r, cl.lim=c(-1,1),
+         method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
+         order = "AOE", diag = FALSE,  
+         addCoef.col="black", addCoefasPercent = FALSE,
+         p.mat = cors3$p, sig.level=0.01, insig = "blank")
+# p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
+dev.off()
+
+#go crazy with histograms and boxplots
+par(mfrow=c(3,4))
+hist(df$SPSI_ICSSUB, breaks=8, main = "SPSI_ICCSUB")
+hist(df$BIS_COGNIT, main = "BIS_COGNIT")
+hist(df$BIS_MOTOR, breaks=6, main = "BIS_MOTOR")
+hist(df$BIS_NONPLAN, breaks=6, main = "BIS_NONPLAN")
+hist(df$`UPPSP NEG URGENCY`, breaks=6, "UPPSP NEG")
+hist(df$`UPPSP POS URGENCY`, breaks=4, main =  "UPPSP POS")
+hist(df$`UPPSP LACK OF PREMED`, breaks=6, main = "UPPSP LPREM")
+hist(df$`UPPSP LACK OF PERSEV`, breaks=8, main = "UPPSP LPERS")
+hist(df$'ln_k', breaks = 6, main = "ln_K")
+hist(df$ln_k_excluding_nondiscounters, breaks=6, main = "lnK_ex_nondis")
+hist(df$ln_k_consistent_cons_nonnd, breaks = 6, main = "lnk_ccnd")
+hist(df$ln_k_consistent_liberal_nonnd, breaks = 6, main = "lnk_clnd")
+
+boxplot(df$SPSI_ICSSUB, main = "SPSI_ICSSUB")
+boxplot(df$BIS_COGNIT, main = "BIS_COGNIT")
+boxplot(df$BIS_MOTOR, main = "BIS_MOTOR")
+boxplot(df$BIS_NONPLAN, main = "BIS_NONPLAN")
+boxplot(df$'UPPSP NEG URGENCY', main = "UPPSP NEG")
+boxplot(df$'UPPSP POS URGENCY', main = "UPPSP POS")
+boxplot(df$'UPPSP LACK OF PREMED', main = "UPPSP LACK PREMED")
+boxplot(df$`UPPSP LACK OF PERSEV`, main = "UPPSP LACK PERSEV")
+boxplot(df$ln_k, main = "ln_k")
+boxplot(df$ln_k_excluding_nondiscounters, main = "lnK_ex_nondis")
+boxplot(df$ln_k_consistent_cons_nonnd, main = "lnk_ccnd")
+boxplot(df$ln_k_consistent_liberal_nonnd, main = "lnk_clnd")
