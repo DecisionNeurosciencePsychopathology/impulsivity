@@ -1,21 +1,22 @@
 ## Michelle's impulsivity analyses
 
 ##install packages on new machine
+
 install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "tibble", "Hmisc",
                    "nnet", "reshape2", "emmeans", "factoextra", "compareGroups", "effects", "VIM", "mice", "multcompView",
-                   "readxl", "lsmeans", "corrplot", "stringi", "psych", "stringr"))
+                   "readxl", "lsmeans", "corrplot", "stringi", "psych", "stringr", "ggfortify"))
 
 #setwd("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/")
 
 #wd for desktop comp @ home
-#setwd("/home/bluebird/Desktop")
+#setwd("/home/bluebird/Desktop"),
 
 #wd for UPMC desktop
-setwd("C:/Users/perryma/Desktop")
+#setwd("C:/Users/perryma/Desktop")
 
 #wd for Michelle laptop
-#setwd("C:/Users/Michelle/Desktop")
-
+setwd("C:/Users/Michelle/Desktop")
+library(stringi)
 library(readr)
 library(lme4)
 library(lmerTest)
@@ -31,7 +32,7 @@ library(reshape2)
 library(corrplot)
 library(emmeans)
 library(factoextra)
-# library(ggfortify)
+library(ggfortify)
 library(compareGroups)
 # library(RColorBrewer)
 # library(MASS)
@@ -44,7 +45,6 @@ library(readxl)
 library(lsmeans)
 library(psych)
 library(corrplot)
-library(stringi)
 library(stringr)
 
 #  read in data
@@ -54,10 +54,10 @@ library(stringr)
 #df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+#df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle laptop
-#df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
+df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
 
 View(df)
 
@@ -272,8 +272,8 @@ corrplot(cors$r, cl.lim=c(-1,1),
 # p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
 dev.off()
 
-
-imp.pca = prcomp(na.omit(imp),scale = TRUE)
+par(mfrow=c(1,1))
+imp.pca <- prcomp(na.omit(imp),scale = TRUE)
 # imp_pcas <- get_pca_ind(imp.pca)
 summary(imp.pca)
 plot(imp.pca,type = 'l')
@@ -281,6 +281,7 @@ plot(imp.pca,type = 'l')
 
 autoplot(imp.pca, loadings = TRUE, loadings.colour = 'blue',
          loadings.label = TRUE, loadings.label.size = 3)
+
 
 # save factor scores
 # find IDs with nothing missing
@@ -345,10 +346,10 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #rescore values UPMC desktop
-money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+#money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
 
 #rescore values michelle laptop
-#money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -374,14 +375,14 @@ colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 
 # UPMC desktop load lookup tables
-lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+#lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+#lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+#lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 # Michelle laptop load lookup tables
-#lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-#lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-#lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
@@ -435,8 +436,8 @@ head(MCQdata)
 MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
 
 #Save MCQ indices to a text file
-write.table(MCQdata, file="C:/Users/perryma/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
-
+#write.table(MCQdata, file="C:/Users/perryma/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
+write.table(MCQdata, file="C:/Users/Michelle/Desktop/MCQ_rescore/MCQindices.txt")
 ## need to fix for NA values in primary rescoring? 
 ## two NA in 211147 2009-01-22 #16 and #18 BUT completed MCQ 2x, has full dataset ~4 months later
 
@@ -452,6 +453,7 @@ df$ln_k_compare <- ((df$ln_k_rescore-df$ln_k)/df$ln_k)*100
 money_compare <- df[, c("MONEY", "ln_k", "money_rescore", "ln_k_rescore")]
 
 #rerun LM for new K
+
 m15 <- lm(ln_k_rescore ~ age + EDUCATION + sex + group_early, data = df)
 summary(m15)
 em15 <- emmeans(m15,"group_early")
