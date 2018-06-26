@@ -12,10 +12,10 @@ install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "ti
 #setwd("/home/bluebird/Desktop"),
 
 #wd for UPMC desktop
-#setwd("C:/Users/perryma/Desktop")
+setwd("C:/Users/perryma/Desktop")
 
 #wd for Michelle laptop
-setwd("C:/Users/Michelle/Desktop")
+#setwd("C:/Users/Michelle/Desktop")
 library(stringi)
 library(readr)
 library(lme4)
@@ -54,10 +54,10 @@ library(stringr)
 #df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-#df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle laptop
-df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
+#df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
 
 View(df)
 
@@ -93,7 +93,7 @@ df$group_early[df$group_early=="DEPRESSION-IDEATOR"] <- "Suicide ideators"
 df$group_early[df$`AGE AT FIRST ATTEMPT`<60] <- "Early-onset attempters"
 df$group_early[df$`AGE AT FIRST ATTEMPT`>59] <- "Late-onset attempters"
 df$group_early <- as.factor(df$group_early)
-df$group_early = factor(df$group_early, levels(df$group_early)[c(3,4,5,1,2)])
+df$group_early <- factor(df$group_early, levels(df$group_early)[c(3,4,5,1,2)])
 
 test <- df[,c(8,44,45)]
 View(test)
@@ -198,59 +198,59 @@ df$age <- df$`BASELINE AGE`
 df$sex <- df$`GENDER TEXT`
 
 m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
-summary(m1)
+m1sum <- summary(m1)
 em1 <- emmeans(m1,"group_early")
 plot(em1, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
-CLD <- cld(em1)
+em1cld <- cld(em1)
 
 
 m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
-summary(m2)
+m2sum <- summary(m2)
 em2 <- emmeans(m2,"group_early")
 plot(em2, horiz = F, comparisons = T, main = "BIS_NONPLAN")
-cld(em2)
+em2cld <- cld(em2)
 
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
-summary(m3)
+m3sum <- summary(m3)
 em3 <- emmeans(m3,"group_early")
 plot(em3, horiz = F, comparisons = T, main = "BIS_COGNIT")
-cld(em3)
+em3cld <- cld(em3)
 
 m4 <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_early, data = df)
-summary(m4)
+m4sum <- summary(m4)
 em4 <- emmeans(m4,"group_early")
 plot(em4, horiz = F, comparisons = T, main = "BIS_MOTOR")
-cld(em4)
+em4cld <- cld(em4)
 
 m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
-summary(m5)
+m5sum <- summary(m5)
 em5 <- emmeans(m5,"group_early")
 plot(em5, horiz = F, comparisons = T, main = "UPPSP_POS")
-cld(em5)
+em5cld <- cld(em5)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
-summary(m6)
+m6sum <- summary(m6)
 em6 <- emmeans(m6,"group_early")
 plot(em6, horiz = F, comparisons = T, main = "UPPSP_NEG")
-cld(em6)
+em6cld <- cld(em6)
 
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
-summary(m7)
+m7sum <- summary(m7)
 em7 <- emmeans(m7,"group_early")
 plot(em7, horiz = F, comparisons = T, main = "UPPSP_LPERS")
-cld(em7)
+em7cld <- cld(em7)
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
-summary(m8)
+m8sum <- summary(m8)
 em8 <- emmeans(m8,"group_early")
 plot(em8, horiz = F, comparisons = T, main = "UPPSP_LPREM")
-cld(em8)
+em8cld <- cld(em8)
 
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
-summary(m9)
+m9sum <- summary(m9)
 em9 <- emmeans(m9,"group_early")
 plot(em9, horiz = F, comparisons = T, main = "ln_K")
-cld(em9)
+em9cld <- cld(em9)
 
 # could try MANOVA
 # http://www.sthda.com/english/wiki/manova-test-in-r-multivariate-analysis-of-variance
@@ -303,14 +303,14 @@ cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 m10 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df)
 summary(m10)
 em10 <- emmeans(m10,"group_early")
-plot(em10, horiz = F, comparisons = T)
+plot(em10, horiz = F, comparisons = T, main = "PCA by Group")
 cld(em10)
 
 # by attempt lethality
 m11 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df)
 summary(m11)
 em11 <- emmeans(m11,"GROUP12467")
-plot(em11, horiz = F, comparisons = T)
+plot(em11, horiz = F, comparisons = T, main = "PCA by Lethality")
 cld(em11)
 
 # do lethality and age of onset explain unique variance?
@@ -341,15 +341,24 @@ ggplot(df[df$GROUP1245==5,], aes(x = `MAX LETHALITY`,  y = impPC1, color = sex))
 
 imps <- as.data.frame(df[, c(26:29,32:35)])
 summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UPPS_posU, UPPS_negU, UPPS_premed, UPPS_persev) ~ group_early + sex + age, data = df))
-# look at lethality for single trait measures
 
+## look at lethality for single trait measures
+#summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UPPS_posU, UPPS_negU, UPPS_premed, UPPS_persev) ~ group_early + sex + age, data = df))
+#m12 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df[df$GROUP1245==5,])
+#summary(m12)
+#m13 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df[df$GROUP1245==5,])
+#summary(m13)
+#anova(m12,m13)
+#m14 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467 + group_early, data = df[df$GROUP1245==5,])
+#summary(m14)
+#anova(m12,m13,m14)
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #rescore values UPMC desktop
-#money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
 
 #rescore values michelle laptop
-money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+#money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -375,14 +384,14 @@ colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 
 # UPMC desktop load lookup tables
-#lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-#lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-#lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 # Michelle laptop load lookup tables
-lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+#lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+#lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+#lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
