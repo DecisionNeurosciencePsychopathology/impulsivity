@@ -12,10 +12,10 @@ install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "ti
 #setwd("/home/bluebird/Desktop"),
 
 #wd for UPMC desktop
-setwd("C:/Users/perryma/Desktop")
+#setwd("C:/Users/perryma/Desktop")
 
 #wd for Michelle laptop
-#setwd("C:/Users/Michelle/Desktop")
+setwd("C:/Users/Michelle/Desktop")
 library(stringi)
 library(readr)
 library(lme4)
@@ -54,10 +54,10 @@ library(stringr)
 #df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+#df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle laptop
-#df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
+df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
 
 View(df)
 
@@ -201,20 +201,20 @@ m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
 m1sum <- summary(m1)
 em1 <- emmeans(m1,"group_early")
 plot(em1, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
-em1cld <- cld(em1)
+spsicld <- cld(em1)
 
 
 m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
 m2sum <- summary(m2)
 em2 <- emmeans(m2,"group_early")
 plot(em2, horiz = F, comparisons = T, main = "BIS_NONPLAN")
-em2cld <- cld(em2)
+nonplancld <- cld(em2)
 
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 m3sum <- summary(m3)
 em3 <- emmeans(m3,"group_early")
 plot(em3, horiz = F, comparisons = T, main = "BIS_COGNIT")
-em3cld <- cld(em3)
+cognitcld <- cld(em3)
 
 m4 <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_early, data = df)
 m4sum <- summary(m4)
@@ -226,31 +226,31 @@ m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m5sum <- summary(m5)
 em5 <- emmeans(m5,"group_early")
 plot(em5, horiz = F, comparisons = T, main = "UPPSP_POS")
-em5cld <- cld(em5)
+posurgcld <- cld(em5)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m6sum <- summary(m6)
 em6 <- emmeans(m6,"group_early")
 plot(em6, horiz = F, comparisons = T, main = "UPPSP_NEG")
-em6cld <- cld(em6)
+negurgcld <- cld(em6)
 
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
 m7sum <- summary(m7)
 em7 <- emmeans(m7,"group_early")
 plot(em7, horiz = F, comparisons = T, main = "UPPSP_LPERS")
-em7cld <- cld(em7)
+lackperscld <- cld(em7)
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
 m8sum <- summary(m8)
 em8 <- emmeans(m8,"group_early")
 plot(em8, horiz = F, comparisons = T, main = "UPPSP_LPREM")
-em8cld <- cld(em8)
+lackpremcld <- cld(em8)
 
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
 m9sum <- summary(m9)
 em9 <- emmeans(m9,"group_early")
 plot(em9, horiz = F, comparisons = T, main = "ln_K")
-em9cld <- cld(em9)
+lnkcld <- cld(em9)
 
 # could try MANOVA
 # http://www.sthda.com/english/wiki/manova-test-in-r-multivariate-analysis-of-variance
@@ -259,11 +259,13 @@ em9cld <- cld(em9)
 #value
 # also without discounting
 imp <-  df[, c(26:29,32:35)]
+impk <-  df[, c(26:29,32:35, 42)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
 
 
 pdf("impulsivity correlations.pdf", width=14, height=14)
+
 corrplot(cors$r, cl.lim=c(-1,1),
          method = "circle", tl.cex = 1.5, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,
@@ -274,13 +276,22 @@ dev.off()
 
 par(mfrow=c(1,1))
 imp.pca <- prcomp(na.omit(imp),scale = TRUE)
+impk.pca <- prcomp(na.omit(impk),scale = TRUE)
 # imp_pcas <- get_pca_ind(imp.pca)
+
 summary(imp.pca)
-plot(imp.pca,type = 'l')
+plot(imp.pca,type = 'l', main = "imp.pca")
+
+summary(impk.pca)
+plot(impk.pca, type = 'l', main = "impk.pca")
 
 
 autoplot(imp.pca, loadings = TRUE, loadings.colour = 'blue',
          loadings.label = TRUE, loadings.label.size = 3)
+
+autoplot(impk.pca, loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3)
+
 
 
 # save factor scores
@@ -303,14 +314,14 @@ cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 m10 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df)
 summary(m10)
 em10 <- emmeans(m10,"group_early")
-plot(em10, horiz = F, comparisons = T, main = "PCA by Group")
+plot(em10, horiz = F, comparisons = T, main = "PC1 by Group")
 cld(em10)
 
 # by attempt lethality
 m11 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df)
 summary(m11)
 em11 <- emmeans(m11,"GROUP12467")
-plot(em11, horiz = F, comparisons = T, main = "PCA by Lethality")
+plot(em11, horiz = F, comparisons = T, main = "PC1 by Lethality")
 cld(em11)
 
 # do lethality and age of onset explain unique variance?
@@ -355,10 +366,10 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #rescore values UPMC desktop
-money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+#money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
 
 #rescore values michelle laptop
-#money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -384,14 +395,14 @@ colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 
 # UPMC desktop load lookup tables
-lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+#lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+#lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+#lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 # Michelle laptop load lookup tables
-#lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-#lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-#lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
+lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
+lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
+lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
@@ -460,6 +471,9 @@ df$ln_k_rescore <- log(df$money_rescore)
 df$ln_k_rescore <- log(df$money_rescore)
 df$ln_k_compare <- ((df$ln_k_rescore-df$ln_k)/df$ln_k)*100
 money_compare <- df[, c("MONEY", "ln_k", "money_rescore", "ln_k_rescore")]
+
+##any difference?
+t.test(df$ln_k, df$ln_k_rescore, alternative = "two.sided", var.equal = FALSE)
 
 #rerun LM for new K
 
@@ -688,15 +702,15 @@ dev.off()
 
 #go crazy with histograms and boxplots
 par(mfrow=c(3,4))
-hist(df$SPSI_ICSSUB, breaks=8, main = "SPSI_ICCSUB")
-hist(df$BIS_COGNIT, main = "BIS_COGNIT")
-hist(df$BIS_MOTOR, breaks=6, main = "BIS_MOTOR")
-hist(df$BIS_NONPLAN, breaks=6, main = "BIS_NONPLAN")
-hist(df$`UPPSP NEG URGENCY`, breaks=6, "UPPSP NEG")
-hist(df$`UPPSP POS URGENCY`, breaks=4, main =  "UPPSP POS")
-hist(df$`UPPSP LACK OF PREMED`, breaks=6, main = "UPPSP LPREM")
-hist(df$`UPPSP LACK OF PERSEV`, breaks=8, main = "UPPSP LPERS")
-hist(df$'ln_k', breaks = 6, main = "ln_K")
+hist(df$SPSI_ICSSUB, breaks=8)
+hist(df$BIS_COGNIT)
+hist(df$BIS_MOTOR, breaks=6)
+hist(df$BIS_NONPLAN, breaks=6)
+hist(df$`UPPSP NEG URGENCY`, breaks=6)
+hist(df$`UPPSP POS URGENCY`, breaks=4)
+hist(df$`UPPSP LACK OF PREMED`, breaks=6)
+hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
+hist(df$ln_k_excluding_nondiscounters, breaks=6)
 hist(df$ln_k_excluding_nondiscounters, breaks=6, main = "lnK_ex_nondis")
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6, main = "lnk_ccnd")
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6, main = "lnk_clnd")
