@@ -90,10 +90,11 @@ df$group_early[df$group_early=="CONTROL"] <- "Non-psychiatric controls"
 df$group_early[df$group_early=="DEPRESSION"] <- "Non-suicidal depressed"
 df$group_early[df$group_early=="IDEATOR"] <- "Suicide ideators"
 df$group_early[df$group_early=="DEPRESSION-IDEATOR"] <- "Suicide ideators"
-df$group_early[df$`AGE AT FIRST ATTEMPT`<60] <- "Early-onset attempters"
-df$group_early[df$`AGE AT FIRST ATTEMPT`>59] <- "Late-onset attempters"
+df$group_early[df$`AGE AT FIRST ATTEMPT`<50] <- "Early-onset attempters"
+df$group_early[df$`AGE AT FIRST ATTEMPT`>=50] <- "Late-onset attempters"
 df$group_early <- as.factor(df$group_early)
 df$group_early <- factor(df$group_early, levels(df$group_early)[c(3,4,5,1,2)])
+names(df)[names(df)=="HOUSEHOLD INCOME"] <- "Income_tot"
 
 test <- df[,c(8,44,45)]
 View(test)
@@ -105,7 +106,6 @@ df$UPPS_negU <- df$`UPPSP NEG URGENCY`
 df$UPPS_posU <- df$`UPPSP POS URGENCY`
 df$UPPS_premed <- df$`UPPSP LACK OF PREMED`
 df$UPPS_persev <- df$`UPPSP LACK OF PERSEV`
-
 df$age_first_att <- df$`AGE AT FIRST ATTEMPT`
 
 # just a prototype
@@ -161,14 +161,14 @@ cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
 
 
 par(mfrow=c(1,1))
-pdf("impulsivity k correlations.pdf", width=14, height=14)
+#pdf("impulsivity k correlations.pdf", width=14, height=14)
 corrplot(cors$r, cl.lim=c(-1,1),
          method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,  
          addCoef.col="black", addCoefasPercent = FALSE,
          p.mat = cors$p, sig.level=0.01, insig = "blank")
 # p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
-dev.off()
+#dev.off()
 
 # impulsivity vars by group
 chars <- as.data.frame(df[, c(26:30,32:35,42:43)])
@@ -258,7 +258,7 @@ em9cld <- cld(em9)
 
 #value
 # also without discounting
-imp <-  df[, c(26:29,32:35)]
+imp <-  df[, c(23:26,29:32, 70)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
 
@@ -285,7 +285,7 @@ autoplot(imp.pca, loadings = TRUE, loadings.colour = 'blue',
 
 # save factor scores
 # find IDs with nothing missing
-ids <-  na.omit(df[, c(1,26:29,32:35,42)])
+ids <-  na.omit(df[, c(1,23:26,29:32, 70)])
 ids <- ids[,1]
 df$impPC1 <- NA
 df$impPC2 <- NA
@@ -295,7 +295,7 @@ test <- imp.pca$x[,1]
 df$impPC1[is.element(df$ID, ids$ID)]<- imp.pca$x[,1]
 df$impPC2[is.element(df$ID, ids$ID)]<- imp.pca$x[,2]
 
-test <-  df[, c(26:29,32:35,42,48:49)]
+test <-  df[, c(23:26,29:32, 53:54, 70)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 
@@ -445,21 +445,31 @@ head(MCQdata)
 MCQdata <- MCQdata[c(13,9,10,11,12,5,6,7,8,1,2,3,4)]
 
 #Save MCQ indices to a text file
-#write.table(MCQdata, file="C:/Users/perryma/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
-write.table(MCQdata, file="C:/Users/Michelle/Desktop/MCQ_rescore/MCQindices.txt")
+write.table(MCQdata, file="C:/Users/perryma/Desktop/MCQ_rescore/MCQindices.txt", row.names=FALSE)
+#write.table(MCQdata, file="C:/Users/Michelle/Desktop/MCQ_rescore/MCQindices.txt")
 ## need to fix for NA values in primary rescoring? 
 ## two NA in 211147 2009-01-22 #16 and #18 BUT completed MCQ 2x, has full dataset ~4 months later
 
 
 ## exclude low consistency pts? Find % of pts and ask Alex
 
-#add new K values to main df
+#only med k values ##should eventually discard
 df$money_rescore <- MCQdata$MedK[match(df$ID,MCQdata$subjID)]
 df$MedCons <- MCQdata$MedCons[match(df$ID,MCQdata$subjID)]
 df$ln_k_rescore <- log(df$money_rescore)
-df$ln_k_rescore <- log(df$money_rescore)
-df$ln_k_compare <- ((df$ln_k_rescore-df$ln_k)/df$ln_k)*100
-money_compare <- df[, c("MONEY", "ln_k", "money_rescore", "ln_k_rescore")]
+
+
+#add new K values to main df
+df$money_rescoreMED <- MCQdata$MedK[match(df$ID,MCQdata$subjID)]
+df$MedConsMED <- MCQdata$MedCons[match(df$ID,MCQdata$subjID)]
+df$money_rescoreLRG <- MCQdata$LrgK[match(df$ID,MCQdata$subjID)]
+df$MedConsLRG <- MCQdata$LrgCons[match(df$ID,MCQdata$subjID)]
+df$money_rescoreSML <- MCQdata$SmlK[match(df$ID,MCQdata$subjID)]
+df$MedConsSML <- MCQdata$SmlCons[match(df$ID,MCQdata$subjID)]
+df$geomMean_K <- (df$money_rescoreMED*df$money_rescoreLRG*df$money_rescoreSML)^(1/3)
+df$geomMean_consist <- (df$MedConsLRG*df$MedConsMED*df$MedConsSML)^(1/3)
+df$ln_k_rescore_geom <- log(df$geomMean_K)
+
 
 #rerun LM for new K
 
@@ -469,14 +479,45 @@ em15 <- emmeans(m15,"group_early")
 plot(em15, horiz = F, comparisons = T, main = "ln_K_rescore" )
 cld(em15)
 
+m15b <- lm(ln_k_rescore_geom ~ age + EDUCATION + sex + group_early, data = df)
+summary(m15b)
+em15b <- emmeans(m15b,"group_early")
+plot(em15b, horiz = F, comparisons = T, main = "ln_K_rescore_geom" )
+cld(em15b)
+
+m15c <- lm(ln_k_rescore_geom ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
+summary(m15c)
+em15c <- emmeans(m15c,"group_early")
+plot(em15c, horiz = F, comparisons = T, main = "ln_K_rescore_geom_income" )
+cld(em15c)
+
+##medium reward size only
 #remove low consistency folks (there are 6 below 70%;47 below 80%)
-df$ln_k_consistent_liberal <- df$ln_k_rescore
-df$ln_k_consistent_conservative <- df$ln_k_rescore
-inconsistent_folks_liberal <- df$MedCons < 0.7
-inconsistent_folks_conservative <- df$MedCons < 0.8
+#df$ln_k_consistent_liberal <- df$ln_k_rescore
+#df$ln_k_consistent_conservative <- df$ln_k_rescore
+#inconsistent_folks_liberal <- df$MedCons < 0.7
+#inconsistent_folks_conservative <- df$MedCons < 0.8
 #check counts format: sum(z, na.rm=TRUE)
-df$ln_k_consistent_liberal[df$MedCons<0.7] <- NA
-df$ln_k_consistent_conservative[df$MedCons<0.8] <- NA
+#df$ln_k_consistent_liberal[df$MedCons<0.7] <- NA
+#df$ln_k_consistent_conservative[df$MedCons<0.8] <- NA
+
+
+# orig med k only -- will eventually discard remove low consistency folks (there are 6 below 70%;47 below 80%)
+#df$ln_k_consistent_liberal <- df$ln_k_rescore
+#df$ln_k_consistent_conservative <- df$ln_k_rescore
+#inconsistent_folks_liberal <- df$MedCons < 0.7
+#inconsistent_folks_conservative <- df$MedCons < 0.8
+#check counts format: sum(z, na.rm=TRUE)
+#df$ln_k_consistent_liberal[df$MedCons<0.7] <- NA
+#df$ln_k_consistent_conservative[df$MedCons<0.8] <- NA
+
+df$ln_k_consistent_liberal <- df$ln_k_rescore_geom
+df$ln_k_consistent_conservative <- df$ln_k_rescore_geom
+inconsistent_folks_liberal <- df$geomMean_consist < 0.7
+inconsistent_folks_conservative <- df$geomMean_consist < 0.8
+#check counts format: sum(z, na.rm=TRUE)
+df$ln_k_consistent_liberal[df$geomMean_consist<0.7] <- NA
+df$ln_k_consistent_conservative[df$geomMean_consist<0.8] <- NA
 
 m16 <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early, data = df)
 summary(m16)
@@ -484,11 +525,23 @@ em16 <- emmeans(m16,"group_early")
 plot(em16, horiz = F, comparisons = T, main = "ln_K_consislib")
 cld(em16)
 
+m16b <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
+summary(m16b)
+em16b <- emmeans(m16b,"group_early")
+plot(em16b, horiz = F, comparisons = T, main = "ln_K_consislib")
+cld(em16b)
+
 m17 <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early, data = df)
 summary(m17)
 em17 <- emmeans(m17,"group_early")
 plot(em17, horiz = F, comparisons = T, main = "ln_K_consiscon")
 cld(em17)
+
+m17b <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
+summary(m17b)
+em17b <- emmeans(m17b,"group_early")
+plot(em17b, horiz = F, comparisons = T, main = "ln_K_consiscon_income")
+cld(em17b)
 
 #remove nondiscounters?
 df$ln_k_consistent_liberal_nonnd <- df$ln_k_consistent_liberal
@@ -510,12 +563,28 @@ cld(lm18)
 #m18 shows significance for early onset & ide after controlling for consistency & nondiscounters, not betweeen
 #groups but as coefficients (?)
 
+
+m18b <- lm(ln_k_consistent_liberal_nonnd ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
+summary(m18b)
+em18b <- emmeans(m18b,"group_early")
+lm18b <- lsmeans(m18b,"group_early")
+
+plot(em18b, horiz = F, comparisons = T, main = "ln_k_consislib_nondis_income")
+cld(em18b)
+cld(lm18b)
+
 m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df, col = "red")
 summary(m19)
 em19 <- emmeans(m19,"group_early")
 plot(em19, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
 cld(em19)
 #m19 doesn't show anything too interesting, possibly not enough data to get clear results
+
+m19b <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early + Income_tot, data = df, col = "red")
+summary(m19b)
+em19b <- emmeans(m19b,"group_early")
+plot(em19b, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
+cld(em19b)
 
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
@@ -668,23 +737,22 @@ t4 <-
 export2html(t4, "imp_measures_by_group_pluskrescores.html")
 
 
-# rerun correlations across impulsivity measures - all - the lesson is lnK doesn't really correlate with anything
-chars4 <- as.data.frame(df[, c(26:30,32:35,42, 43, 57, 59:62)])
+# rerun correlations across impulsivity measures/income/etc
+chars4 <- as.data.frame(df[, c(26:30,32:35,42, 43, 65:70, 21, 25, 23, 19, 15, 51)])
 #head(just_rois)
 # cormat <- cor(na.omit(chars))
 # pdf("trait correlations.pdf", width=14, height=14)
-cors3 <- corr.test(chars4, use = "pairwise",method="pearson", alpha=.05)
+cors3 <- corr.test(chars4, use = "pairwise",method="pearson", alpha=.01)
 
 
 par(mfrow=c(1,1))
-pdf("impulsivity k correlations big.pdf", width=14, height=14)
-corrplot(cors3$r, cl.lim=c(-1,1),
+bigcor <- corrplot(cors3$r, cl.lim=c(-1,1),
          method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,  
          addCoef.col="black", addCoefasPercent = FALSE,
          p.mat = cors3$p, sig.level=0.01, insig = "blank")
 # p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
-dev.off()
+
 
 #go crazy with histograms and boxplots
 par(mfrow=c(3,4))
@@ -692,7 +760,7 @@ hist(df$SPSI_ICSSUB, breaks=8, main = "SPSI_ICCSUB")
 hist(df$BIS_COGNIT, main = "BIS_COGNIT")
 hist(df$BIS_MOTOR, breaks=6, main = "BIS_MOTOR")
 hist(df$BIS_NONPLAN, breaks=6, main = "BIS_NONPLAN")
-hist(df$`UPPSP NEG URGENCY`, breaks=6, "UPPSP NEG")
+hist(df$`UPPSP NEG URGENCY`, breaks=6, main = "UPPSP NEG")
 hist(df$`UPPSP POS URGENCY`, breaks=4, main =  "UPPSP POS")
 hist(df$`UPPSP LACK OF PREMED`, breaks=6, main = "UPPSP LPREM")
 hist(df$`UPPSP LACK OF PERSEV`, breaks=8, main = "UPPSP LPERS")
