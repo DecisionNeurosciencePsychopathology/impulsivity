@@ -16,7 +16,6 @@ setwd("C:/Users/perryma/Desktop")
 
 #wd for Michelle laptop
 #setwd("C:/Users/Michelle/Desktop")
-setwd("C:/Users/Michelle/Desktop")
 library(stringi)
 library(readr)
 library(lme4)
@@ -56,11 +55,9 @@ library(stringr)
 
 #Michelle UPMC desktop
 df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
-#df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle laptop
 #df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
-df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
 
 View(df)
 
@@ -174,10 +171,10 @@ corrplot(cors$r, cl.lim=c(-1,1),
 #dev.off()
 
 # impulsivity vars by group
-chars <- as.data.frame(df[, c(26:30,32:35,42:43)])
+chars2 <- as.data.frame(df[, c(26:30,32:35,42:43)])
 c2 <-
   compareGroups(
-    chars,
+    chars2,
     y = df$group_early,
     bivar = TRUE,
     include.miss = FALSE
@@ -204,7 +201,6 @@ m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
 m1sum <- summary(m1)
 em1 <- emmeans(m1,"group_early")
 plot(em1, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
-em1cld <- cld(em1)
 spsicld <- cld(em1)
 
 
@@ -212,14 +208,12 @@ m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
 m2sum <- summary(m2)
 em2 <- emmeans(m2,"group_early")
 plot(em2, horiz = F, comparisons = T, main = "BIS_NONPLAN")
-em2cld <- cld(em2)
 nonplancld <- cld(em2)
 
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 m3sum <- summary(m3)
 em3 <- emmeans(m3,"group_early")
 plot(em3, horiz = F, comparisons = T, main = "BIS_COGNIT")
-em3cld <- cld(em3)
 cognitcld <- cld(em3)
 
 m4 <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_early, data = df)
@@ -232,35 +226,30 @@ m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m5sum <- summary(m5)
 em5 <- emmeans(m5,"group_early")
 plot(em5, horiz = F, comparisons = T, main = "UPPSP_POS")
-em5cld <- cld(em5)
 posurgcld <- cld(em5)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m6sum <- summary(m6)
 em6 <- emmeans(m6,"group_early")
 plot(em6, horiz = F, comparisons = T, main = "UPPSP_NEG")
-em6cld <- cld(em6)
 negurgcld <- cld(em6)
 
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
 m7sum <- summary(m7)
 em7 <- emmeans(m7,"group_early")
 plot(em7, horiz = F, comparisons = T, main = "UPPSP_LPERS")
-em7cld <- cld(em7)
 lackperscld <- cld(em7)
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
 m8sum <- summary(m8)
 em8 <- emmeans(m8,"group_early")
 plot(em8, horiz = F, comparisons = T, main = "UPPSP_LPREM")
-em8cld <- cld(em8)
 lackpremcld <- cld(em8)
 
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
 m9sum <- summary(m9)
 em9 <- emmeans(m9,"group_early")
 plot(em9, horiz = F, comparisons = T, main = "ln_K")
-em9cld <- cld(em9)
 lnkcld <- cld(em9)
 
 # could try MANOVA
@@ -269,12 +258,10 @@ lnkcld <- cld(em9)
 
 #value
 # also without discounting
-<<<<<<< HEAD
-imp <-  df[, c(23:26,29:32, 70)]
-=======
+
 imp <-  df[, c(26:29,32:35)]
-impk <-  df[, c(26:29,32:35, 42)]
->>>>>>> 0fbb54073cb01d639f19fe886a313fd5464a22c8
+impk <-  df[, c(26:29,32:35, 42:43)]
+
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
 
@@ -295,7 +282,6 @@ impk.pca <- prcomp(na.omit(impk),scale = TRUE)
 # imp_pcas <- get_pca_ind(imp.pca)
 
 summary(imp.pca)
-plot(imp.pca,type = 'l')
 plot(imp.pca,type = 'l', main = "imp.pca")
 
 summary(impk.pca)
@@ -312,7 +298,7 @@ autoplot(impk.pca, loadings = TRUE, loadings.colour = 'blue',
 
 # save factor scores
 # find IDs with nothing missing
-ids <-  na.omit(df[, c(1,23:26,29:32, 70)])
+ids <-  na.omit(df[, c(1,26:29,32:35)])
 ids <- ids[,1]
 df$impPC1 <- NA
 df$impPC2 <- NA
@@ -322,7 +308,7 @@ test <- imp.pca$x[,1]
 df$impPC1[is.element(df$ID, ids$ID)]<- imp.pca$x[,1]
 df$impPC2[is.element(df$ID, ids$ID)]<- imp.pca$x[,2]
 
-test <-  df[, c(23:26,29:32, 53:54, 70)]
+test <-  df[, c(26:29,32:35)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
 cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 
@@ -330,7 +316,6 @@ cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 m10 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df)
 summary(m10)
 em10 <- emmeans(m10,"group_early")
-plot(em10, horiz = F, comparisons = T, main = "PCA by Group")
 plot(em10, horiz = F, comparisons = T, main = "PC1 by Group")
 cld(em10)
 
@@ -338,7 +323,6 @@ cld(em10)
 m11 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df)
 summary(m11)
 em11 <- emmeans(m11,"GROUP12467")
-plot(em11, horiz = F, comparisons = T, main = "PCA by Lethality")
 plot(em11, horiz = F, comparisons = T, main = "PC1 by Lethality")
 cld(em11)
 
@@ -385,11 +369,9 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #rescore values UPMC desktop
 money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
-#money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
 
 #rescore values michelle laptop
 #money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
-money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -418,17 +400,11 @@ names(MCQdata)[names(MCQdata) == "MCQsubjID"] <- "subjID"
 lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
 lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
 lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
-#lookup1 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-#lookup2 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-#lookup3 <- read.table("C:/Users/perryma/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 # Michelle laptop load lookup tables
 #lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
 #lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
 #lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
-lookup1 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup1MCQ.txt", header = TRUE)
-lookup2 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup2MCQ.txt", header = TRUE)
-lookup3 <- read.table("C:/Users/Michelle/Desktop/MCQ_rescore/lookup3MCQ.txt", header = TRUE)
 
 #Calculate unique value for each sequence of responses
 MCQdata$MCQ13 <- MCQdata$MCQ13*1
@@ -613,14 +589,14 @@ plot(em18b, horiz = F, comparisons = T, main = "ln_k_consislib_nondis_income")
 cld(em18b)
 cld(lm18b)
 
-m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df, col = "red")
+m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df)
 summary(m19)
 em19 <- emmeans(m19,"group_early")
 plot(em19, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
 cld(em19)
 #m19 doesn't show anything too interesting, possibly not enough data to get clear results
 
-m19b <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early + Income_tot, data = df, col = "red")
+m19b <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
 summary(m19b)
 em19b <- emmeans(m19b,"group_early")
 plot(em19b, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
@@ -714,26 +690,8 @@ hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
 #grid.arrange(p1,p2,p3,p4,p5,
             # layout_matrix = matrix(c(1,2,3,4,5,5), ncol=3, byrow=TRUE))
 
-
-chars2 <- as.data.frame(df[, c(26:30,32:38,42,61)])
-#head(just_rois)
-# cormat <- cor(na.omit(chars))
-# pdf("trait correlations.pdf", width=14, height=14)
-cors <- corr.test(chars2, use = "pairwise",method="pearson", alpha=.05)
-
-
-par(mfrow=c(1,1))
-pdf("impulsivity k correlations compare.pdf", width=14, height=14)
-corrplot(cors$r, cl.lim=c(-1,1),
-         method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
-         order = "AOE", diag = FALSE,  
-         addCoef.col="black", addCoefasPercent = FALSE,
-         p.mat = cors$p, sig.level=0.01, insig = "blank")
-# p.mat = 1-abs(cormat), sig.level=0.75, insig = "blank")
-dev.off()
-
-# impulsivity vars by group - that table is huge and rather uninformative...
-chars3 <- as.data.frame(df[, c(26:30,32:35,42:43, 57, 59:62)])
+# impulsivity vars by group; univariate cors...
+chars3 <- as.data.frame(df[, c(26:30,32:35,42:43, 57, 66:70)])
 c3 <-
   compareGroups(
     chars3,
@@ -754,31 +712,9 @@ t3 <-
   )
 export2html(t3, "imp_measures_by_group_pluskrescores.html")
 
-# impulsivity vars by group - only adding lnk rescore consistent conservative minus nondisc
-chars4 <- as.data.frame(df[, c(26:30,32:35,42:43, 62)])
-c4 <-
-  compareGroups(
-    chars4,
-    y = df$group_early,
-    bivar = TRUE,
-    include.miss = FALSE
-  )
-t4 <-
-  createTable(
-    c4,
-    # hide = c(sex = "FEMALE", list(race = c(
-    #   "WHITE", "ASIAN PACIFIC"
-    # ))),
-    hide.no = 0,
-    digits = 1,
-    show.n = TRUE,
-    show.p.mul = TRUE
-  )
-export2html(t4, "imp_measures_by_group_pluskrescores.html")
-
 
 # rerun correlations across impulsivity measures/income/etc
-chars4 <- as.data.frame(df[, c(26:30,32:35,42, 43, 65:70, 21, 25, 23, 19, 15, 51)])
+chars4 <- as.data.frame(df[, c(26:30,32:35,42, 43, 66:70, 21, 25, 23, 19, 15, 51)])
 #head(just_rois)
 # cormat <- cor(na.omit(chars))
 # pdf("trait correlations.pdf", width=14, height=14)
@@ -796,7 +732,6 @@ bigcor <- corrplot(cors3$r, cl.lim=c(-1,1),
 
 #go crazy with histograms and boxplots
 par(mfrow=c(3,4))
-<<<<<<< HEAD
 hist(df$SPSI_ICSSUB, breaks=8, main = "SPSI_ICCSUB")
 hist(df$BIS_COGNIT, main = "BIS_COGNIT")
 hist(df$BIS_MOTOR, breaks=6, main = "BIS_MOTOR")
@@ -806,17 +741,7 @@ hist(df$`UPPSP POS URGENCY`, breaks=4, main =  "UPPSP POS")
 hist(df$`UPPSP LACK OF PREMED`, breaks=6, main = "UPPSP LPREM")
 hist(df$`UPPSP LACK OF PERSEV`, breaks=8, main = "UPPSP LPERS")
 hist(df$'ln_k', breaks = 6, main = "ln_K")
-=======
-hist(df$SPSI_ICSSUB, breaks=8)
-hist(df$BIS_COGNIT)
-hist(df$BIS_MOTOR, breaks=6)
-hist(df$BIS_NONPLAN, breaks=6)
-hist(df$`UPPSP NEG URGENCY`, breaks=6)
-hist(df$`UPPSP POS URGENCY`, breaks=4)
-hist(df$`UPPSP LACK OF PREMED`, breaks=6)
-hist(df$`UPPSP LACK OF PERSEV`, breaks=8)
 hist(df$ln_k_excluding_nondiscounters, breaks=6)
->>>>>>> 0fbb54073cb01d639f19fe886a313fd5464a22c8
 hist(df$ln_k_excluding_nondiscounters, breaks=6, main = "lnK_ex_nondis")
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6, main = "lnk_ccnd")
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6, main = "lnk_clnd")
