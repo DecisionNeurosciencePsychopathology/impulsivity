@@ -28,14 +28,14 @@ library(xtable)
 library(Hmisc)
 library(nnet)
 library(reshape2)
-# library(ggbiplot)
+#library(ggbiplot)
 library(corrplot)
 library(emmeans)
 library(factoextra)
 library(ggfortify)
 library(compareGroups)
-# library(RColorBrewer)
-# library(MASS)
+library(RColorBrewer)
+library(MASS)
 library(effects)
 library(readr)
 library(VIM)
@@ -48,18 +48,18 @@ library(corrplot)
 library(stringr)
 
 #  read in data
-#df <- read_excel("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+#df <- readxl::read_excel("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 # Michelle desktop @ home
-#df <- read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+#df <- readxl::read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-df <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+df <- readxl::read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle laptop
-#df <- read_excel("Impulsivity.updated.01-11-18.xlsx")
+#df <- readxl::read_excel("Impulsivity.updated.01-11-18.xlsx")
 
-View(df)
+#View(df)
 
 df$ln_k <- log(df$MONEY)
 # NB: there are some non-discounters in this database
@@ -72,9 +72,9 @@ df$GROUP12467 <- as.factor(df$GROUP12467)
 df$GROUP1245 <- as.factor(df$GROUP1245)
 
 # check missing data
-missing_ind_chars = aggr(
+missing_ind_chars = VIM::aggr(
   df,
-  col = mdc(1:2),
+  col = mice::mdc(1:2),
   numbers = TRUE,
   sortVars = TRUE,
   labels = names(df),
@@ -90,14 +90,18 @@ df$group_early[df$group_early=="CONTROL"] <- "Non-psychiatric controls"
 df$group_early[df$group_early=="DEPRESSION"] <- "Non-suicidal depressed"
 df$group_early[df$group_early=="IDEATOR"] <- "Suicide ideators"
 df$group_early[df$group_early=="DEPRESSION-IDEATOR"] <- "Suicide ideators"
-df$group_early[df$`AGE AT FIRST ATTEMPT`<50] <- "Early-onset attempters"
-df$group_early[df$`AGE AT FIRST ATTEMPT`>=50] <- "Late-onset attempters"
+#df$group_early[df$`AGE AT FIRST ATTEMPT`<50] <- "Early-onset attempters"
+#df$group_early[df$`AGE AT FIRST ATTEMPT`>=50] <- "Late-onset attempters"
+df$group_early[df$`AGE AT FIRST ATTEMPT`<56] <- "Early-onset attempters"
+df$group_early[df$`AGE AT FIRST ATTEMPT`>=56] <- "Late-onset attempters"
+#df$group_early[df$`AGE AT FIRST ATTEMPT`<60] <- "Early-onset attempters"
+#df$group_early[df$`AGE AT FIRST ATTEMPT`>=60] <- "Late-onset attempters"
 df$group_early <- as.factor(df$group_early)
 df$group_early <- factor(df$group_early, levels(df$group_early)[c(3,4,5,1,2)])
 names(df)[names(df)=="HOUSEHOLD INCOME"] <- "Income_tot"
 
 test <- df[,c(8,44,45)]
-View(test)
+#View(test)
 
 df <- df[,c(1:7,9:45,8)]
 
@@ -108,17 +112,18 @@ df$UPPS_premed <- df$`UPPSP LACK OF PREMED`
 df$UPPS_persev <- df$`UPPSP LACK OF PERSEV`
 df$age_first_att <- df$`AGE AT FIRST ATTEMPT`
 
+#####need to specify compareGroups::compareGroups:: package or won't run
 # just a prototype
 chars <- as.data.frame(df[, c(5,10:16,23)])
 c1 <-
-  compareGroups(
+  compareGroups::compareGroups(
     chars,
     y = df$group_early,
     bivar = TRUE,
     include.miss = FALSE
   )
 t1 <-
-  createTable(
+  compareGroups::createTable(
     c1,
     hide = c(sex = "FEMALE", list(race = c(
       "WHITE", "ASIAN PACIFIC"
@@ -127,7 +132,7 @@ t1 <-
     digits = 0,
     show.n = TRUE
   )
-export2html(t1, "imp_chars_by_group.html")
+compareGroups::export2html(t1, "imp_chars_by_group.html")
 
 # Michelle to check all histograms for herself
 par(mfrow=c(3,3))
@@ -157,12 +162,12 @@ chars <- as.data.frame(df[, c(26:30,32:38,42)])
 #head(just_rois)
 # cormat <- cor(na.omit(chars))
 # pdf("trait correlations.pdf", width=14, height=14)
-cors <- corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
+cors <- psych::corr.test(chars, use = "pairwise",method="pearson", alpha=.05)
 
 
 par(mfrow=c(1,1))
 #pdf("impulsivity k correlations.pdf", width=14, height=14)
-corrplot(cors$r, cl.lim=c(-1,1),
+corrplot::corrplot(cors$r, cl.lim=c(-1,1),
          method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,  
          addCoef.col="black", addCoefasPercent = FALSE,
@@ -173,14 +178,14 @@ corrplot(cors$r, cl.lim=c(-1,1),
 # impulsivity vars by group
 chars2 <- as.data.frame(df[, c(26:30,32:35,42:43)])
 c2 <-
-  compareGroups(
+  compareGroups::compareGroups(
     chars2,
     y = df$group_early,
     bivar = TRUE,
     include.miss = FALSE
   )
 t2 <-
-  createTable(
+  compareGroups::createTable(
     c2,
     # hide = c(sex = "FEMALE", list(race = c(
     #   "WHITE", "ASIAN PACIFIC"
@@ -190,67 +195,67 @@ t2 <-
     show.n = TRUE,
     show.p.mul = TRUE
   )
-export2html(t2, "imp_measures_by_group.html")
+compareGroups::export2html(t2, "imp_measures_by_group.html")
 
 # build a linear model
-emm_options(graphics.engine = "lattice")
+emmeans::emm_options(graphics.engine = "lattice")
 df$age <- df$`BASELINE AGE`
 df$sex <- df$`GENDER TEXT`
 
 m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
 m1sum <- summary(m1)
-em1 <- emmeans(m1,"group_early")
+em1 <- emmeans::emmeans(m1,"group_early")
 plot(em1, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
-spsicld <- cld(em1)
+spsicld <- emmeans::cld(em1)
 
 
 m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
 m2sum <- summary(m2)
-em2 <- emmeans(m2,"group_early")
+em2 <- emmeans::emmeans(m2,"group_early")
 plot(em2, horiz = F, comparisons = T, main = "BIS_NONPLAN")
-nonplancld <- cld(em2)
+nonplancld <- emmeans::cld(em2)
 
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 m3sum <- summary(m3)
-em3 <- emmeans(m3,"group_early")
+em3 <- emmeans::emmeans(m3,"group_early")
 plot(em3, horiz = F, comparisons = T, main = "BIS_COGNIT")
-cognitcld <- cld(em3)
+cognitcld <- emmeans::cld(em3)
 
 m4 <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_early, data = df)
 m4sum <- summary(m4)
-em4 <- emmeans(m4,"group_early")
+em4 <- emmeans::emmeans(m4,"group_early")
 plot(em4, horiz = F, comparisons = T, main = "BIS_MOTOR")
-em4cld <- cld(em4)
+em4cld <- emmeans::cld(em4)
 
 m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m5sum <- summary(m5)
-em5 <- emmeans(m5,"group_early")
+em5 <- emmeans::emmeans(m5,"group_early")
 plot(em5, horiz = F, comparisons = T, main = "UPPSP_POS")
-posurgcld <- cld(em5)
+posurgcld <- emmeans::cld(em5)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m6sum <- summary(m6)
-em6 <- emmeans(m6,"group_early")
+em6 <- emmeans::emmeans(m6,"group_early")
 plot(em6, horiz = F, comparisons = T, main = "UPPSP_NEG")
-negurgcld <- cld(em6)
+negurgcld <- emmeans::cld(em6)
 
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
 m7sum <- summary(m7)
-em7 <- emmeans(m7,"group_early")
+em7 <- emmeans::emmeans(m7,"group_early")
 plot(em7, horiz = F, comparisons = T, main = "UPPSP_LPERS")
-lackperscld <- cld(em7)
+lackperscld <- emmeans::cld(em7)
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
 m8sum <- summary(m8)
-em8 <- emmeans(m8,"group_early")
+em8 <- emmeans::emmeans(m8,"group_early")
 plot(em8, horiz = F, comparisons = T, main = "UPPSP_LPREM")
-lackpremcld <- cld(em8)
+lackpremcld <- emmeans::cld(em8)
 
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
 m9sum <- summary(m9)
-em9 <- emmeans(m9,"group_early")
+em9 <- emmeans::emmeans(m9,"group_early")
 plot(em9, horiz = F, comparisons = T, main = "ln_K")
-lnkcld <- cld(em9)
+lnkcld <- emmeans::cld(em9)
 
 # could try MANOVA
 # http://www.sthda.com/english/wiki/manova-test-in-r-multivariate-analysis-of-variance
@@ -263,12 +268,12 @@ imp <-  df[, c(26:29,32:35)]
 impk <-  df[, c(26:29,32:35, 42:43)]
 
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
-cors <- corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
+cors <- psych::corr.test(imp, use = "pairwise",method="pearson", alpha=.05)
 
 
 pdf("impulsivity correlations.pdf", width=14, height=14)
 
-corrplot(cors$r, cl.lim=c(-1,1),
+corrplot::corrplot(cors$r, cl.lim=c(-1,1),
          method = "circle", tl.cex = 1.5, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,
          addCoef.col="black", addCoefasPercent = FALSE,
@@ -288,10 +293,10 @@ summary(impk.pca)
 plot(impk.pca, type = 'l', main = "impk.pca")
 
 
-autoplot(imp.pca, loadings = TRUE, loadings.colour = 'blue',
+ggplot2::autoplot(imp.pca, loadings = TRUE, loadings.colour = 'blue',
          loadings.label = TRUE, loadings.label.size = 3)
 
-autoplot(impk.pca, loadings = TRUE, loadings.colour = 'blue',
+ggplot2::autoplot(impk.pca, loadings = TRUE, loadings.colour = 'blue',
          loadings.label = TRUE, loadings.label.size = 3)
 
 
@@ -310,21 +315,21 @@ df$impPC2[is.element(df$ID, ids$ID)]<- imp.pca$x[,2]
 
 test <-  df[, c(26:29,32:35)]
 #val_rois <- val_rois[,-grep("ACC",names(val_rois))]
-cors <- corr.test(test, use = "pairwise",method="pearson", alpha=.05)
+cors <- psych::corr.test(test, use = "pairwise",method="pearson", alpha=.05)
 
 # rerun linear model on first PC
 m10 <- lm(impPC1 ~ age + EDUCATION + sex + group_early, data = df)
 summary(m10)
-em10 <- emmeans(m10,"group_early")
+em10 <- emmeans::emmeans(m10,"group_early")
 plot(em10, horiz = F, comparisons = T, main = "PC1 by Group")
-cld(em10)
+emmeans::cld(em10)
 
 # by attempt lethality
 m11 <- lm(impPC1 ~ age + EDUCATION + sex + GROUP12467, data = df)
 summary(m11)
-em11 <- emmeans(m11,"GROUP12467")
+em11 <- emmeans::emmeans(m11,"GROUP12467")
 plot(em11, horiz = F, comparisons = T, main = "PC1 by Lethality")
-cld(em11)
+emmeans::cld(em11)
 
 # do lethality and age of onset explain unique variance?
 # answer: neither explains too much variance within attempters
@@ -338,15 +343,15 @@ summary(m14)
 anova(m12,m13,m14)
 
 # age of onset by lethality, obviously a relationship, partly obscured by greater # attempts in early-onset
-ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = `MAX LETHALITY`, color = sex, shape = `RACE TEXT`, linetype = `RACE TEXT`)) + geom_jitter() + geom_smooth(method = "gam")
+ggplot2::ggplot(df[df$GROUP1245==5,], ggplot2::aes(x = `AGE AT FIRST ATTEMPT`,  y = `MAX LETHALITY`, color = sex, shape = `RACE TEXT`, linetype = `RACE TEXT`)) + ggplot2::geom_jitter() + ggplot2::geom_smooth(method = "gam")
 
 # and what about impulsivity vs.continuous age at first attempt?
-ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = impPC1, color = sex, linetype = `RACE TEXT`)) + geom_jitter() + geom_smooth(method = "gam")
-ggplot(df[df$GROUP1245==5,], aes(x = `AGE AT FIRST ATTEMPT`,  y = impPC1)) + geom_jitter() + geom_smooth(method = "gam")
+ggplot2::ggplot(df[df$GROUP1245==5,], ggplot2::aes(x = `AGE AT FIRST ATTEMPT`,  y = impPC1, color = sex, linetype = `RACE TEXT`)) + ggplot2::geom_jitter() + ggplot2::geom_smooth(method = "gam")
+ggplot2::ggplot(df[df$GROUP1245==5,], ggplot2::aes(x = `AGE AT FIRST ATTEMPT`,  y = impPC1)) + ggplot2::geom_jitter() + ggplot2::geom_smooth(method = "gam")
 
 
 # lethality vs. impulsivity -- very weak relationship, would not emphasize
-ggplot(df[df$GROUP1245==5,], aes(x = `MAX LETHALITY`,  y = impPC1, color = sex)) + geom_jitter() + geom_smooth(method = "gam")
+ggplot2::ggplot(df[df$GROUP1245==5,], ggplot2::aes(x = `MAX LETHALITY`,  y = impPC1, color = sex)) + ggplot2::geom_jitter() + ggplot2::geom_smooth(method = "gam")
 
 # recode the variable names
 
@@ -368,10 +373,10 @@ summary(man1 <- manova(cbind(SPSI_ICSSUB, BIS_COGNIT, BIS_MOTOR, BIS_NONPLAN, UP
 # re-score delay discounting in case there is an error.  Low correlations suspicious.
 # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5042866/
 #rescore values UPMC desktop
-money2 <- read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
+money2 <- readxl::read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/mcq_rescore/subjvalues_k.xlsx")
 
 #rescore values michelle laptop
-#money2 <- read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
+#money2 <- readxl::read_excel("C:/Users/Michelle/Desktop/MCQ_rescore/subjvalues_k.xlsx")
 money2dat <- money2[, c("ID","CDATE", "QuestionNumber", "Q")]
 money2dat$Q[money2dat$Q == 1] <- 2
 money2dat$Q[money2dat$Q == 0] <- 1
@@ -381,7 +386,7 @@ money2dat$Q[money2dat$Q == 0] <- 1
 as.character(money2dat$QuestionNumber)
 
 #reshape to fit MCQsyntax
-m2d_dates <- dcast(money2dat, ID + CDATE ~ QuestionNumber, value.var = "Q")
+m2d_dates <- reshape2::dcast(money2dat, ID + CDATE ~ QuestionNumber, value.var = "Q")
 
 #make unique identifier by date taken MCQ
 m2d_dates$subjID <- make.names(m2d_dates$ID,unique=T)
@@ -491,21 +496,21 @@ t.test(df$ln_k, df$ln_k_rescore, alternative = "two.sided", var.equal = FALSE)
 
 m15 <- lm(ln_k_rescore ~ age + EDUCATION + sex + group_early, data = df)
 summary(m15)
-em15 <- emmeans(m15,"group_early")
+em15 <- emmeans::emmeans(m15,"group_early")
 plot(em15, horiz = F, comparisons = T, main = "ln_K_rescore" )
-cld(em15)
+emmeans::cld(em15)
 
 m15b <- lm(ln_k_rescore_geom ~ age + EDUCATION + sex + group_early, data = df)
 summary(m15b)
-em15b <- emmeans(m15b,"group_early")
+em15b <- emmeans::emmeans(m15b,"group_early")
 plot(em15b, horiz = F, comparisons = T, main = "ln_K_rescore_geom" )
-cld(em15b)
+emmeans::cld(em15b)
 
 m15c <- lm(ln_k_rescore_geom ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
 summary(m15c)
-em15c <- emmeans(m15c,"group_early")
+em15c <- emmeans::emmeans(m15c,"group_early")
 plot(em15c, horiz = F, comparisons = T, main = "ln_K_rescore_geom_income" )
-cld(em15c)
+emmeans::cld(em15c)
 
 ##medium reward size only
 #remove low consistency folks (there are 6 below 70%;47 below 80%)
@@ -537,27 +542,27 @@ df$ln_k_consistent_conservative[df$geomMean_consist<0.8] <- NA
 
 m16 <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early, data = df)
 summary(m16)
-em16 <- emmeans(m16,"group_early")
+em16 <- emmeans::emmeans(m16,"group_early")
 plot(em16, horiz = F, comparisons = T, main = "ln_K_consislib")
-cld(em16)
+emmeans::cld(em16)
 
 m16b <- lm(ln_k_consistent_liberal ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
 summary(m16b)
-em16b <- emmeans(m16b,"group_early")
+em16b <- emmeans::emmeans(m16b,"group_early")
 plot(em16b, horiz = F, comparisons = T, main = "ln_K_consislib")
-cld(em16b)
+emmeans::cld(em16b)
 
 m17 <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early, data = df)
 summary(m17)
-em17 <- emmeans(m17,"group_early")
+em17 <- emmeans::emmeans(m17,"group_early")
 plot(em17, horiz = F, comparisons = T, main = "ln_K_consiscon")
-cld(em17)
+emmeans::cld(em17)
 
 m17b <- lm(ln_k_consistent_conservative ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
 summary(m17b)
-em17b <- emmeans(m17b,"group_early")
+em17b <- emmeans::emmeans(m17b,"group_early")
 plot(em17b, horiz = F, comparisons = T, main = "ln_K_consiscon_income")
-cld(em17b)
+emmeans::cld(em17b)
 
 #remove nondiscounters?
 df$ln_k_consistent_liberal_nonnd <- df$ln_k_consistent_liberal
@@ -570,51 +575,51 @@ df$ln_k_consistent_cons_nonnd[nondiscounters] <- NA
 
 m18 <- lm(ln_k_consistent_liberal_nonnd ~ age + EDUCATION + sex + group_early, data = df)
 summary(m18)
-em18 <- emmeans(m18,"group_early")
-lm18 <- lsmeans(m18,"group_early")
+em18 <- emmeans::emmeans(m18,"group_early")
+lm18 <- lsmeans::lsmeans(m18,"group_early")
 
 plot(em18, horiz = F, comparisons = T, main = "ln_k_consislib_nondis")
-cld(em18)
-cld(lm18)
+emmeans::cld(em18)
+emmeans::cld(lm18)
 #m18 shows significance for early onset & ide after controlling for consistency & nondiscounters, not betweeen
 #groups but as coefficients (?)
 
 
 m18b <- lm(ln_k_consistent_liberal_nonnd ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
 summary(m18b)
-em18b <- emmeans(m18b,"group_early")
-lm18b <- lsmeans(m18b,"group_early")
+em18b <- emmeans::emmeans(m18b,"group_early")
+lm18b <- lsmeans::lsmeans(m18b,"group_early")
 
 plot(em18b, horiz = F, comparisons = T, main = "ln_k_consislib_nondis_income")
-cld(em18b)
-cld(lm18b)
+emmeans::cld(em18b)
+emmeans::cld(lm18b)
 
 m19 <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early, data = df)
 summary(m19)
-em19 <- emmeans(m19,"group_early")
+em19 <- emmeans::emmeans(m19,"group_early")
 plot(em19, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
-cld(em19)
+emmeans::cld(em19)
 #m19 doesn't show anything too interesting, possibly not enough data to get clear results
 
 m19b <- lm(ln_k_consistent_cons_nonnd ~ age + EDUCATION + sex + group_early + Income_tot, data = df)
 summary(m19b)
-em19b <- emmeans(m19b,"group_early")
+em19b <- emmeans::emmeans(m19b,"group_early")
 plot(em19b, horiz = F, comparisons = T, color = 'red', main = "ln_K_consiscon_nondis")
-cld(em19b)
+emmeans::cld(em19b)
 
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6)
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
 
 
-#CLD_lm18 = cld(lm18,
+#emmeans::cld_lm18 = emmeans::cld(lm18,
 #                      alpha=0.05,
 #                     Letters=letters,
 #                      adjust="tukey")
-#CLD_lm18$.group=gsub(" ", "", CLD_lm18$.group)
+#emmeans::cld_lm18$.group=gsub(" ", "", emmeans::cld_lm18$.group)
 
 #pd = position_dodge(.8)
 
-#p1 <- ggplot(CLD_lm18,
+#p1 <- ggplot(emmeans::cld_lm18,
  #      aes(
   #       x     = group_early,
    #      y     = lsmean,
@@ -693,14 +698,14 @@ hist(df$ln_k_consistent_liberal_nonnd, breaks = 6)
 # impulsivity vars by group; univariate cors...
 chars3 <- as.data.frame(df[, c(26:30,32:35,42:43, 57, 66:70)])
 c3 <-
-  compareGroups(
+  compareGroups::compareGroups(
     chars3,
     y = df$group_early,
     bivar = TRUE,
     include.miss = FALSE
   )
 t3 <-
-  createTable(
+  compareGroups::createTable(
     c3,
     # hide = c(sex = "FEMALE", list(race = c(
     #   "WHITE", "ASIAN PACIFIC"
@@ -710,7 +715,7 @@ t3 <-
     show.n = TRUE,
     show.p.mul = TRUE
   )
-export2html(t3, "imp_measures_by_group_pluskrescores.html")
+compareGroups::export2html(t3, "imp_measures_by_group_pluskrescores.html")
 
 
 # rerun correlations across impulsivity measures/income/etc
@@ -718,11 +723,11 @@ chars4 <- as.data.frame(df[, c(26:30,32:35,42, 43, 66:70, 21, 25, 23, 19, 15, 51
 #head(just_rois)
 # cormat <- cor(na.omit(chars))
 # pdf("trait correlations.pdf", width=14, height=14)
-cors3 <- corr.test(chars4, use = "pairwise",method="pearson", alpha=.01)
+cors3 <- psych::corr.test(chars4, use = "pairwise",method="pearson", alpha=.01)
 
 
 par(mfrow=c(1,1))
-bigcor <- corrplot(cors3$r, cl.lim=c(-1,1),
+bigcor <- corrplot::corrplot(cors3$r, cl.lim=c(-1,1),
          method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
          order = "AOE", diag = FALSE,  
          addCoef.col="black", addCoefasPercent = FALSE,
@@ -741,7 +746,6 @@ hist(df$`UPPSP POS URGENCY`, breaks=4, main =  "UPPSP POS")
 hist(df$`UPPSP LACK OF PREMED`, breaks=6, main = "UPPSP LPREM")
 hist(df$`UPPSP LACK OF PERSEV`, breaks=8, main = "UPPSP LPERS")
 hist(df$'ln_k', breaks = 6, main = "ln_K")
-hist(df$ln_k_excluding_nondiscounters, breaks=6)
 hist(df$ln_k_excluding_nondiscounters, breaks=6, main = "lnK_ex_nondis")
 hist(df$ln_k_consistent_cons_nonnd, breaks = 6, main = "lnk_ccnd")
 hist(df$ln_k_consistent_liberal_nonnd, breaks = 6, main = "lnk_clnd")
