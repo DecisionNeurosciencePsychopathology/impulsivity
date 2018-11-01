@@ -2,9 +2,9 @@
 
 ##install packages on new machine
 
-install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "tibble", "Hmisc",
-                   "nnet", "reshape2", "emmeans", "factoextra", "compareGroups", "effects", "VIM", "mice", "multcompView",
-                   "readxl", "lsmeans", "corrplot", "stringi", "psych", "stringr", "ggfortify"))
+#install.packages(c("readr", "lme4", "lmerTest", "ggplot2", "dplyr", "tidyr", "tibble", "Hmisc",
+#                   "nnet", "reshape2", "emmeans", "factoextra", "compareGroups", "effects", "VIM", "mice", "multcompView",
+#                   "readxl", "lsmeans", "corrplot", "stringi", "psych", "stringr", "ggfortify"))
 
 #setwd("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/")
 
@@ -54,7 +54,8 @@ library(stringr)
 #df <- readxl::read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-df <- readxl::read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+#df <- readxl::read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+df <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/impl400.xlsx"))
 
 #Michelle laptop
 #df <- readxl::read_excel("Impulsivity.updated.01-11-18.xlsx")
@@ -85,25 +86,47 @@ missing_ind_chars = VIM::aggr(
 
 # we don't have age at first attempt, but Michelle will add it to the df and calculate a new variable as follows:
 
-df$group_early <- as.character(df$COMMENT)
-df$group_early[df$group_early=="CONTROL"] <- "Non-psychiatric controls"
-df$group_early[df$group_early=="DEPRESSION"] <- "Non-suicidal depressed"
-df$group_early[df$group_early=="IDEATOR"] <- "Suicide ideators"
-df$group_early[df$group_early=="DEPRESSION-IDEATOR"] <- "Suicide ideators"
-#df$group_early[df$`AGE AT FIRST ATTEMPT`<50] <- "Early-onset attempters"
-#df$group_early[df$`AGE AT FIRST ATTEMPT`>=50] <- "Late-onset attempters"
-df$group_early[df$`AGE AT FIRST ATTEMPT`<56] <- "Early-onset attempters"
-df$group_early[df$`AGE AT FIRST ATTEMPT`>=56] <- "Late-onset attempters"
+#early- and late-onset grouping
+
+#df$group_early <- as.character(df$COMMENT)
+#df$group_early <- df$GROUP1245
+df$group_early <- factor(df$GROUP1245, levels=c(levels(df$GROUP1245), "10", "11"))
+
+##df$group_early[df$group_early=="CONTROL"] <- "Non-psychiatric controls"
+#df$group_early[df$group_early=="DEPRESSION"] <- "Non-suicidal depressed"
+#df$group_early[df$group_early=="IDEATOR"] <- "Suicide ideators"
+#df$group_early[df$group_early=="DEPRESSION-IDEATOR"] <- "Suicide ideators"
+#df$group_early[df$group_early=="IDEATOR-ATTEMPTER"] <- "Suicide ideators"
+df$group_early[df$`AGE AT FIRST ATTEMPT`<57] <- "10"
+df$group_early[df$`AGE AT FIRST ATTEMPT`>=57] <- "11"
+df$group_early[df$ID=='210002'] <- "11"
+df$group_early[df$ID=='114886'] <- "11"
+#df$group_early[df$`AGE AT FIRST ATTEMPT`<56] <- "Early-onset attempters"
+#df$group_early[df$`AGE AT FIRST ATTEMPT`>=56] <- "Late-onset attempters"
 #df$group_early[df$`AGE AT FIRST ATTEMPT`<60] <- "Early-onset attempters"
 #df$group_early[df$`AGE AT FIRST ATTEMPT`>=60] <- "Late-onset attempters"
-df$group_early <- as.factor(df$group_early)
-df$group_early <- factor(df$group_early, levels(df$group_early)[c(3,4,5,1,2)])
+df$group_early <- factor(df$group_early)
+table(df$group_early)
+median(df$'AGE AT FIRST ATTEMPT', na.rm = TRUE)
+median(df_censored$'AGE AT FIRST ATTEMPT', na.rm = TRUE)
+
+#low and high planing grouping
+df$group_planning <- factor(df$GROUP1245, levels=c(levels(df$GROUP1245), "8", "9"))
+
+df$group_planning[df$`BL WORST INTENT PLANNING`<=8] <- "8"
+df$group_planning[df$`BL WORST INTENT PLANNING`>8] <- "9"
+df$group_planning[df$group_planning == '5'] <- NA
+df$group_planning <- factor(df$group_planning)
+table(df$group_planning)
+
+
+
+
 names(df)[names(df)=="HOUSEHOLD INCOME"] <- "Income_tot"
 
 test <- df[,c(8,44,45)]
 #View(test)
 
-df <- df[,c(1:7,9:45,8)]
 
 # recode the variable names
 df$UPPS_negU <- df$`UPPSP NEG URGENCY`
@@ -201,6 +224,19 @@ compareGroups::export2html(t2, "imp_measures_by_group.html")
 emmeans::emm_options(graphics.engine = "lattice")
 df$age <- df$`BASELINE AGE`
 df$sex <- df$`GENDER TEXT`
+df$group_basic <- df$GROUP1245
+df$MAX_LETHALITY <- as.numeric(df$`MAX LETHALITY`)
+df$TOTAL_ATTEMPTS <- df$'TOTAL BASELINE ATTEMPTS'+ df$'TOTAL FOLLOWUP ATTEMPTS'
+df_att <- df[df$GROUP1245 == '5',]
+
+
+m0 <- lm(UPPS_persev ~ age + EDUCATION + sex + scale(`AGE AT FIRST ATTEMPT`) + I(scale(`AGE AT FIRST ATTEMPT`)^2), data = df_att)
+summary(m0)
+#... to be continued
+
+#models with groups
+df_censored <- df
+df_censored$group_early[df_censored$`AGE AT FIRST ATTEMPT` < 20]<- NA
 
 m1 <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
 m1sum <- summary(m1)
@@ -208,6 +244,24 @@ em1 <- emmeans::emmeans(m1,"group_early")
 plot(em1, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
 spsicld <- emmeans::cld(em1)
 
+m1cens <- lm(SPSI_ICSSUB ~ `BASELINE AGE` + EDUCATION + `GENDER TEXT` + group_early, data = df_censored)
+m1censsum <- summary(m1cens)
+em1cens <- emmeans::emmeans(m1cens,"group_early")
+plot(em1cens, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+spsicld_cens <- emmeans::cld(em1cens)
+
+
+m1nb <- glm.nb(SPSI_ICSSUB ~ age + EDUCATION + sex + group_early, data = df)
+m1nbsum <- summary(m1nb)
+em1nb <- emmeans::emmeans(m1nb,"group_early")
+plot(em1nb, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+spsicld_nb <- emmeans::cld(em1nb)
+
+m1p <- lm(SPSI_ICSSUB ~ age + EDUCATION + sex + group_planning, data = df)
+m1psum <- summary(m1p)
+em1p <- emmeans::emmeans(m1p,"group_planning")
+plot(em1p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+spsicld_p <- emmeans::cld(em1p)
 
 m2 <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df)
 m2sum <- summary(m2)
@@ -215,11 +269,29 @@ em2 <- emmeans::emmeans(m2,"group_early")
 plot(em2, horiz = F, comparisons = T, main = "BIS_NONPLAN")
 nonplancld <- emmeans::cld(em2)
 
+m2p <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_planning, data = df)
+m2psum <- summary(m2p)
+em2p <- emmeans::emmeans(m2p,"group_planning")
+plot(em2p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+nonplancld_p <- emmeans::cld(em2p)
+
+m2cens <- lm(BIS_NONPLAN ~ age + EDUCATION + sex + group_early, data = df_censored)
+m2censsum <- summary(m2cens)
+em2cens <- emmeans::emmeans(m2cens,"group_early")
+plot(em2cens, horiz = F, comparisons = T, main = "BIS_NONPLAN")
+nonplancld_cens <- emmeans::cld(em2cens)
+
 m3 <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_early, data = df)
 m3sum <- summary(m3)
 em3 <- emmeans::emmeans(m3,"group_early")
 plot(em3, horiz = F, comparisons = T, main = "BIS_COGNIT")
 cognitcld <- emmeans::cld(em3)
+
+m3p <- lm(BIS_COGNIT ~ age + EDUCATION + sex + group_planning, data = df)
+m3psum <- summary(m3p)
+em3p <- emmeans::emmeans(m3p,"group_planning")
+plot(em3p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+cognitcld_p <- emmeans::cld(em3p)
 
 m4 <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_early, data = df)
 m4sum <- summary(m4)
@@ -227,11 +299,30 @@ em4 <- emmeans::emmeans(m4,"group_early")
 plot(em4, horiz = F, comparisons = T, main = "BIS_MOTOR")
 em4cld <- emmeans::cld(em4)
 
+m4p <- lm(BIS_MOTOR ~ age + EDUCATION + sex + group_planning, data = df)
+m4psum <- summary(m4p)
+em4p <- emmeans::emmeans(m4p,"group_planning")
+plot(em4p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+em4cld_p <- emmeans::cld(em4p)
+
+
 m5 <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m5sum <- summary(m5)
 em5 <- emmeans::emmeans(m5,"group_early")
 plot(em5, horiz = F, comparisons = T, main = "UPPSP_POS")
 posurgcld <- emmeans::cld(em5)
+
+m5nb <- glm.nb(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
+m5nbsum <- summary(m5nb)
+em5nb <- emmeans::emmeans(m5nb,"group_early")
+plot(em5nb, horiz = F, comparisons = T, main = "UPPSP_POS")
+posurgcld_nb <- emmeans::cld(em5nb)
+
+m5p <- lm(`UPPSP POS URGENCY` ~ age + EDUCATION + sex + group_planning, data = df)
+m5psum <- summary(m5p)
+em5p <- emmeans::emmeans(m5p,"group_planning")
+plot(em5p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+posurgcld_p <- emmeans::cld(em5p)
 
 m6 <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_early, data = df)
 m6sum <- summary(m6)
@@ -239,11 +330,26 @@ em6 <- emmeans::emmeans(m6,"group_early")
 plot(em6, horiz = F, comparisons = T, main = "UPPSP_NEG")
 negurgcld <- emmeans::cld(em6)
 
+m6p <- lm(`UPPSP NEG URGENCY` ~ age + EDUCATION + sex + group_planning, data = df)
+m6psum <- summary(m6p)
+em6p <- emmeans::emmeans(m6p,"group_planning")
+plot(em6p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+negurgcld_p <- emmeans::cld(em6p)
+
+
 m7 <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_early, data = df)
 m7sum <- summary(m7)
 em7 <- emmeans::emmeans(m7,"group_early")
 plot(em7, horiz = F, comparisons = T, main = "UPPSP_LPERS")
 lackperscld <- emmeans::cld(em7)
+
+m7p <- lm(`UPPSP LACK OF PERSEV` ~ age + EDUCATION + sex + group_planning, data = df)
+m7psum <- summary(m7p)
+em7p <- emmeans::emmeans(m7p,"group_planning")
+plot(em7p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+lackperscld_p <- emmeans::cld(em7p)
+
+
 
 m8 <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_early, data = df)
 m8sum <- summary(m8)
@@ -251,11 +357,33 @@ em8 <- emmeans::emmeans(m8,"group_early")
 plot(em8, horiz = F, comparisons = T, main = "UPPSP_LPREM")
 lackpremcld <- emmeans::cld(em8)
 
+m8cens <- lm(`UPPSP LACK OF PREMED` ~ `BASELINE AGE` + EDUCATION + `GENDER TEXT` + group_early, data = df_censored)
+m8censsum <- summary(m8cens)
+em8cens <- emmeans::emmeans(m8cens,"group_early")
+plot(em8cens, horiz = F, comparisons = T, main = "BIS_NONPLAN")
+nonplancld_cens <- emmeans::cld(em8cens)
+
+
+m8p <- lm(`UPPSP LACK OF PREMED` ~ age + EDUCATION + sex + group_planning, data = df)
+m8psum <- summary(m8p)
+em8p <- emmeans::emmeans(m8p,"group_planning")
+plot(em8p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+lackpremcld_p <- emmeans::cld(em8p)
+
+
 m9 <- lm(ln_k ~ age + EDUCATION + sex + group_early, data = df)
 m9sum <- summary(m9)
 em9 <- emmeans::emmeans(m9,"group_early")
 plot(em9, horiz = F, comparisons = T, main = "ln_K")
 lnkcld <- emmeans::cld(em9)
+
+
+m9p <- lm(`ln_k` ~ age + EDUCATION + sex + group_planning, data = df)
+m9psum <- summary(m9p)
+em9p <- emmeans::emmeans(m9p,"group_planning")
+plot(em9p, horiz = F, comparisons = T, main = "SPSI_ICCSUB")
+lnkcld_p <- emmeans::cld(em9p)
+
 
 # could try MANOVA
 # http://www.sthda.com/english/wiki/manova-test-in-r-multivariate-analysis-of-variance
@@ -393,8 +521,8 @@ m2d_dates$subjID <- make.names(m2d_dates$ID,unique=T)
 
 #df compatible with syntax
 MCQdata <- m2d_dates[, c(33, 3:29)]
-MCQdata$subjID <- stri_replace_all_fixed(MCQdata$subjID,"X","")
-MCQdata$subjID <- stri_replace_all_fixed(MCQdata$subjID,".1","_2")
+MCQdata$subjID <- stringi::stri_replace_all_fixed(MCQdata$subjID,"X","")
+MCQdata$subjID <- stringi::stri_replace_all_fixed(MCQdata$subjID,".1","_2")
 #rename column headers
 colnames(MCQdata) <- paste("MCQ", colnames(MCQdata), sep = "")
 
@@ -478,15 +606,21 @@ df$ln_k_rescore <- log(df$money_rescore)
 
 
 #add new K values to main df
-df$money_rescoreMED <- MCQdata$MedK[match(df$ID,MCQdata$subjID)]
+df$lnkMed <- MCQdata$MedK[match(df$ID,MCQdata$subjID)]
 df$MedConsMED <- MCQdata$MedCons[match(df$ID,MCQdata$subjID)]
-df$money_rescoreLRG <- MCQdata$LrgK[match(df$ID,MCQdata$subjID)]
+df$lnkLar <- MCQdata$LrgK[match(df$ID,MCQdata$subjID)]
 df$MedConsLRG <- MCQdata$LrgCons[match(df$ID,MCQdata$subjID)]
-df$money_rescoreSML <- MCQdata$SmlK[match(df$ID,MCQdata$subjID)]
+df$lnkSmall <- MCQdata$SmlK[match(df$ID,MCQdata$subjID)]
 df$MedConsSML <- MCQdata$SmlCons[match(df$ID,MCQdata$subjID)]
-df$geomMean_K <- (df$money_rescoreMED*df$money_rescoreLRG*df$money_rescoreSML)^(1/3)
+df$geomMean_K <- (df$lnkMed*df$lnkLar*df$lnkSmall)^(1/3)
 df$geomMean_consist <- (df$MedConsLRG*df$MedConsMED*df$MedConsSML)^(1/3)
 df$ln_k_rescore_geom <- log(df$geomMean_K)
+
+ldf = reshape2::melt(df,
+           na.rm = FALSE,
+           measure.vars = c("lnkSmall", "lnkMed", "lnkLar"), value.name = 'ln_k_long')
+
+lm1 <- lme4::lmer(ln_k_long ~ 'name of factor variable in ldf'*group_early + age + EDUCATION + sex + Income_tot + (1|ID), data = ldf)
 
 
 ##any difference?
@@ -762,3 +896,38 @@ boxplot(df$ln_k, main = "ln_k")
 boxplot(df$ln_k_excluding_nondiscounters, main = "lnK_ex_nondis")
 boxplot(df$ln_k_consistent_cons_nonnd, main = "lnk_ccnd")
 boxplot(df$ln_k_consistent_liberal_nonnd, main = "lnk_clnd")
+
+##will need to change SES debt yes/no questions some people answered no then no (0 then 0)
+
+df_att <- df[df$GROUP1245 == '5',]
+g1 <- ggplot(df_att, aes(age_first_att, SPSI_ICSSUB)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g2 <- ggplot(df_att, aes(age_first_att, BIS_NONPLAN)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g3 <- ggplot(df_att, aes(age_first_att, BIS_MOTOR)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g4 <- ggplot(df_att, aes(age_first_att, BIS_COGNIT)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g5 <- ggplot(df_att, aes(age_first_att, BIS_TOTMEAN)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+df$UPPSP_NEG_URGENCY <- df$'UPPSP NEG URGENCY'
+df$UPPSP_POS_URGENCY <- df$'UPPSP POS URGENCY'
+df$UPPSP_LACK_OF_PREMED <- df$'UPPSP LACK OF PREMED'
+df$UPPSP_LACK_OF_PERSEV <- df$'UPPSP LACK OF PERSEV'
+df_att <- df[df$GROUP1245 == '5',]
+g6 <- ggplot(df_att, aes(age_first_att, UPPSP_NEG_URGENCY)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g7 <- ggplot(df_att, aes(age_first_att, UPPSP_POS_URGENCY)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g8 <- ggplot(df_att, aes(age_first_att, UPPSP_LACK_OF_PREMED)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
+
+g9 <- ggplot(df_att, aes(age_first_att, UPPSP_LACK_OF_PERSEV)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="Age at 1st attempt", y = "SPSI")
