@@ -46,7 +46,27 @@ library(lsmeans)
 library(psych)
 library(corrplot)
 library(stringr)
+library(pscl)
+library(boot)
+library(stargazer)
+library(tidyverse)
+library(lubridate)
+library(survival)
+library(grid)
+library(gridExtra)
 
+# clear environment
+rm(list=ls())
+
+#load dataset
+load("df_tot.Rda")
+load("df_tot_long_depressed_test.Rda")
+df_tot_depressed <- df_tot[df_tot$GROUP1245 != '1',]
+df_tot_att <- df_tot[df_tot$GROUP1245 == '5',]
+load("df_tot_depressed.Rda")
+load("df_tot_long_depressed.Rda")
+
+### NO NEED TO RUN THIS PART AGAIN
 #  read in data
 #df <- readxl::read_excel("~/Box Sync/skinner/projects_analyses/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
@@ -54,12 +74,12 @@ library(stringr)
 #df <- readxl::read_excel("/home/bluebird/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
 
 #Michelle UPMC desktop
-#df <- readxl::read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
-df <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/impl400.xlsx"))
+# old # df <- readxl::read_excel("C:/Users/perryma/Desktop/impulsivity_delaydiscounting/Impulsivity.updated.01-11-18.xlsx")
+df <- read_excel("C:/Users/perryma/Documents/GitHub/impulsivity/impl400.xlsx")
 
 #Michelle laptop
 #df <- readxl::read_excel("Impulsivity.updated.01-11-18.xlsx")
-names(df)
+#names(df)
 #View(df)
 
 df$MONEY <- (df$MoneyS*df$MoneyM*df$MoneyL)^(1/3)
@@ -68,7 +88,7 @@ df$ln_k <- log(df$MONEY)
 df$ln_k_excluding_nondiscounters <- df$ln_k
 nondiscounters <- df$ln_k < -10
 df$ln_k_excluding_nondiscounters[nondiscounters] <- NA
-
+df$MONEY <- df$ln_k_excluding_nondiscounters
 
 df$GROUP12467 <- as.factor(df$GROUP12467)
 df$GROUP1245 <- as.factor(df$GROUP1245)
@@ -76,16 +96,38 @@ df$DEBT <- as.factor(df$DEBT)
 df$DEBT_TROUBLE <- as.factor(df$DEBT_TROUBLE)
 df$'MAX LETHALITY' <- as.numeric(df$'MAX LETHALITY')
 summary(df)
-
+#
+#
 df_sup <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/suppl_imp.xlsx"))
-
-
+df_dates <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/dates_add.xlsx"))
+df_fu <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/fu_att.xlsx"))
+df_bas <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/bas_att.xlsx"))
+df_bas_test <- readxl::read_excel(("C:/Users/perryma/Documents/GitHub/impulsivity/bas_att_203521_212655_220407_adjust_test.xlsx"))
+df_sup$ID <- as.factor(df_sup$ID)
+df_dates$ID <- as.factor(df_dates$ID)
+df_fu$ID <- as.factor(df_fu$ID)
+df_bas$ID <- as.factor(df_bas$ID)
+df_bas_test$ID <- as.factor(df_bas_test$ID)
+df$ID <- as.factor(df$ID)
+#
 df_tot <- left_join(df, df_sup, by=c("ID"))
-summary(df_tot)
+df_tot <- left_join(df_tot, df_dates, by=c("ID"))
+#df_tot <- left_join(df_tot, df_bas, by=c("ID"))
+df_tot <- left_join(df_tot, df_bas_test, by=c("ID"))
+df_tot <- left_join(df_tot, df_fu, by=c("ID"))
 df_tot$ID <- as.factor(df_tot$ID)
+summary(df_tot)
 
+df_tot$NAISSANCE <- as.Date(df_tot$NAISSANCE)
+df_tot$MaxOfCDATE <- as.Date(df_tot$MaxOfCDATE)
+df_tot <- transform(df_tot, ID = as.factor(ID), BL_DATE1 = as.Date(BL_DATE1), BL_DATE2 = as.Date(BL_DATE2), BL_DATE3 = as.Date(BL_DATE3), BL_DATE4 = as.Date(BL_DATE4), BL_DATE5 = as.Date(BL_DATE5), FU_DATE1 = as.Date(FU_DATE1), FU_DATE2 = as.Date(FU_DATE2), FU_DATE3 = as.Date(FU_DATE3), FU_DATE4 = as.Date(FU_DATE4), MaxOfCDATE = as.Date(MaxOfCDATE))
+df_tot$finalAGE <- df_tot$MaxOfCDATE - df_tot$NAISSANCE
+df_tot$finalAGE_years <- df_tot$finalAGE/365
+df_tot <- transform(df_tot, PATTYPE = as.factor(PATTYPE), COMMENT.x = as.factor(COMMENT.x), GENDER.TEXT = as.factor(GENDER.TEXT), ETHNICITY.TEXT = as.factor(ETHNICITY.TEXT), RACE.TEXT = as.factor(RACE.TEXT), MARITAL.TEXT = as.factor(MARITAL.TEXT), INITIALS = as.factor(INITIALS), COMMENT.y = as.factor(COMMENT.y))
 
-# check missing data
+#
+# # check missing data
+#
 missing_ind_chars = VIM::aggr(
   df_tot,
   col = mice::mdc(1:2),
@@ -97,21 +139,19 @@ missing_ind_chars = VIM::aggr(
   ylab = c("Proportion of missingness", "Missingness Pattern")
 )
 
-# we don't have age at first attempt, but Michelle will add it to the df_tot and calculate a new variable as follows:
-
 #early- and late-onset grouping
 
-#df_tot$group_early <- as.character(df_tot$COMMENT)
-#df_tot$group_early <- df_tot$GROUP1245
+df_tot$group_early <- df_tot$COMMENT.x
+df_tot$group_early <- df_tot$GROUP1245
 df_tot$group_early <- factor(df_tot$GROUP1245, levels=c(levels(df_tot$GROUP1245), "10", "11"))
 
-##df_tot$group_early[df_tot$group_early=="CONTROL"] <- "Non-psychiatric controls"
-#df_tot$group_early[df_tot$group_early=="DEPRESSION"] <- "Non-suicidal depressed"
-#df_tot$group_early[df_tot$group_early=="IDEATOR"] <- "Suicide ideators"
-#df_tot$group_early[df_tot$group_early=="DEPRESSION-IDEATOR"] <- "Suicide ideators"
-#df_tot$group_early[df_tot$group_early=="IDEATOR-ATTEMPTER"] <- "Suicide ideators"
-df_tot$group_early[df_tot$`AGE AT FIRST ATTEMPT`<57] <- "10"
-df_tot$group_early[df_tot$`AGE AT FIRST ATTEMPT`>=57] <- "11"
+df_tot$group_early[df_tot$group_early=="CONTROL"] <- "1"
+df_tot$group_early[df_tot$group_early=="DEPRESSION"] <- "2"
+df_tot$group_early[df_tot$group_early=="IDEATOR"] <- "4"
+df_tot$group_early[df_tot$group_early=="DEPRESSION-IDEATOR"] <- "4"
+df_tot$group_early[df_tot$group_early=="IDEATOR-ATTEMPTER"] <- "4"
+df_tot$group_early[df_tot$AGE.AT.FIRST.ATTEMPT<57] <- "10"
+df_tot$group_early[df_tot$AGE.AT.FIRST.ATTEMPT>=57] <- "11"
 df_tot$group_early[df_tot$ID=='210002'] <- "11"
 df_tot$group_early[df_tot$ID=='114886'] <- "11"
 #df_tot$group_early[df_tot$`AGE AT FIRST ATTEMPT`<56] <- "Early-onset attempters"
@@ -121,13 +161,12 @@ df_tot$group_early[df_tot$ID=='114886'] <- "11"
 df_tot$group_early <- factor(df_tot$group_early)
 table(df_tot$group_early)
 median(df_tot$'AGE AT FIRST ATTEMPT', na.rm = TRUE)
-median(df_tot_censored$'AGE AT FIRST ATTEMPT', na.rm = TRUE)
 
 #low and high planing grouping
 df_tot$group_planning <- factor(df_tot$GROUP1245, levels=c(levels(df_tot$GROUP1245), "8", "9"))
 
-df_tot$group_planning[df_tot$`BL WORST INTENT PLANNING`<=8] <- "8"
-df_tot$group_planning[df_tot$`BL WORST INTENT PLANNING`>8] <- "9"
+df_tot$group_planning[df_tot$BL.WORST.INTENT.PLANNING<=8] <- "8"
+df_tot$group_planning[df_tot$BL.WORST.INTENT.PLANNING>8] <- "9"
 df_tot$group_planning[df_tot$group_planning == '5'] <- NA
 df_tot$group_planning <- factor(df_tot$group_planning)
 table(df_tot$group_planning)
@@ -140,11 +179,40 @@ names(df_tot)[names(df_tot)=="HOUSEHOLD INCOME"] <- "Income_tot"
 
 
 # recode the variable names
-df_tot$UPPS_negU <- df_tot$`UPPSP NEG URGENCY`
-df_tot$UPPS_posU <- df_tot$`UPPSP POS URGENCY`
-df_tot$UPPS_premed <- df_tot$`UPPSP LACK OF PREMED`
-df_tot$UPPS_persev <- df_tot$`UPPSP LACK OF PERSEV`
-df_tot$age_first_att <- df_tot$`AGE AT FIRST ATTEMPT`
+# df_tot$UPPS_negU <- df_tot$`UPPSP NEG URGENCY`
+# df_tot$UPPS_posU <- df_tot$`UPPSP POS URGENCY`
+# df_tot$UPPS_premed <- df_tot$`UPPSP LACK OF PREMED`
+# df_tot$UPPS_persev <- df_tot$`UPPSP LACK OF PERSEV`
+# df_tot$age_first_att <- df_tot$`AGE AT FIRST ATTEMPT`
+
+df_tot <- df_tot %>% rowwise() %>% mutate(attempts_tot = sum(TOTAL.BASELINE.ATTEMPTS, TOTAL.FOLLOWUP.ATTEMPTS, na.rm = TRUE)) %>% ungroup()
+#
+# df_tot$UPPSP_NEG_URGENCY <- df_tot$'UPPSP NEG URGENCY'
+# df_tot$UPPSP_POS_URGENCY <- df_tot$'UPPSP POS URGENCY'
+# df_tot$UPPSP_LACK_OF_PREMED <- df_tot$'UPPSP LACK OF PREMED'
+# df_tot$UPPSP_LACK_OF_PERSEV <- df_tot$'UPPSP LACK OF PERSEV'
+
+df_tot$gender <- as.factor(df_tot$GENDER.TEXT)
+df_tot$race <- as.factor(df_tot$RACE.TEXT)
+df_tot$ethnicity <- as.factor(df_tot$ETHNICITY.TEXT)
+
+df_tot$age_first_att_zero <- df_tot$AGE.AT.FIRST.ATTEMPT
+df_tot$age_first_att_zero[is.na(df_tot$age_first_att_zero)] <- 0
+
+df_tot$dep <- df_tot$HAMnoSUIC
+df_tot$age <- df_tot$AGE.TODAY
+df_tot$age_bl <- df_tot$BASELINE.AGE
+#
+#
+df_tot$ID[df_tot$attempts_tot==0 & df_tot$GROUP1245=='5']
+df_tot$TOTAL.FOLLOWUP.ATTEMPTS[df_tot$ID == '114886' | df_tot$ID == '210002'] <- 1
+# 
+save(df_tot, file="df_tot.Rda")
+
+
+### ANALYSIS BEGINS HERE
+
+df_tot_att <- df_tot[df_tot$GROUP1245 == '5',]
 
 #####need to specify compareGroups::compareGroups:: package or won't run
 # just a prototype
@@ -910,7 +978,6 @@ boxplot(df_tot$ln_k_consistent_liberal_nonnd, main = "lnk_clnd")
 
 ##will need to change SES debt yes/no questions some people answered no then no (0 then 0)
 
-df_tot_att <- df_tot[df_tot$GROUP1245 == '5',]
 g1 <- ggplot(df_tot_att, aes(age_first_att, SPSI_ICSSUB)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
   labs(x="Age at 1st attempt", y = "SPSI")
 
@@ -926,11 +993,6 @@ g4 <- ggplot(df_tot_att, aes(age_first_att, BIS_COGNIT)) + geom_smooth(method = 
 g5 <- ggplot(df_tot_att, aes(age_first_att, BIS_TOTMEAN)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
   labs(x="Age at 1st attempt", y = "SPSI")
 
-df_tot$UPPSP_NEG_URGENCY <- df_tot$'UPPSP NEG URGENCY'
-df_tot$UPPSP_POS_URGENCY <- df_tot$'UPPSP POS URGENCY'
-df_tot$UPPSP_LACK_OF_PREMED <- df_tot$'UPPSP LACK OF PREMED'
-df_tot$UPPSP_LACK_OF_PERSEV <- df_tot$'UPPSP LACK OF PERSEV'
-df_tot_att <- df_tot[df_tot$GROUP1245 == '5',]
 g6 <- ggplot(df_tot_att, aes(age_first_att, UPPSP_NEG_URGENCY)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
   labs(x="Age at 1st attempt", y = "UPPSP_NEG_URGENCY")
 
@@ -946,3 +1008,493 @@ g8 <- ggplot(df_tot_att, aes(age_first_att, UPPSP_LACK_OF_PREMED)) + geom_smooth
 
 g9 <- ggplot(df_tot_att, aes(age_first_att, UPPSP_LACK_OF_PERSEV)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
   labs(x="Age at 1st attempt", y = "SPSI")
+
+
+########################## zip poisson whatever models #####################
+
+summary(z1 <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY), data = df_tot))
+
+znull <- update(z1, . ~ 1)
+
+pchisq(2 * (logLik(z1) - logLik(znull)), df = 1, lower.tail = FALSE)
+
+df_tot$attempts_YesNo <- df_tot$attempts_tot > 0 
+summary(p1 <- glm(attempts_YesNo ~ scale(UPPSP_NEG_URGENCY), family = binomial, data = df_tot))
+summary(p1 <- glm(attempts_YesNo ~ scale(UPPSP_LACK_OF_PERSEV), family = binomial, data = df_tot))
+summary(p1 <- glm(attempts_YesNo ~ scale(UPPSP_LACK_OF_PREMED), family = binomial, data = df_tot))
+summary(p1 <- glm(attempts_YesNo ~ scale(UPPSP_NEG_URGENCY) + scale(UPPSP_LACK_OF_PERSEV) + scale(UPPSP_LACK_OF_PREMED) + age_bl, family = binomial, data = df_tot))
+
+summary(p1 <- glm(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + age_bl, family = poisson, data = df_tot_att))
+summary(p1 <- glm(attempts_tot ~ scale(UPPSP_LACK_OF_PREMED) + age_bl, family = poisson, data = df_tot_att))
+summary(p1 <- glm(attempts_tot ~ scale(UPPSP_LACK_OF_PERSEV) + age_bl, family = poisson, data = df_tot_att))
+
+summary(p1 <- glm(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(UPPSP_LACK_OF_PERSEV) + scale(UPPSP_LACK_OF_PREMED) + age_bl, family = poisson, data = df_tot_att))
+summary(p1 <- glm(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(UPPSP_LACK_OF_PERSEV) + scale(UPPSP_LACK_OF_PREMED) + age_first_att_zero, family = poisson, data = df_tot_att))
+
+vuong(p1, z1)
+
+#without healthy controls
+df_tot$ID[df_tot$attempts_tot>10]
+df_tot_censored <- df_tot[df_tot$attempts_tot<11,]
+
+summary(z1d <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY), data = df_tot_censored))
+summary(z1d_2 <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(UPPSP_LACK_OF_PERSEV) + scale(UPPSP_LACK_OF_PREMED), data = df_tot_censored))
+summary(z1d_3 <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(UPPSP_LACK_OF_PERSEV) + scale(UPPSP_LACK_OF_PREMED) + finalAGE_years, data = df_tot_censored))
+
+
+znull_d <- update(z1d, . ~ 1)
+
+pchisq(2 * (logLik(z1d) - logLik(znull_d)), df = 1, lower.tail = FALSE)
+
+summary(p1d <- glm(attempts_tot ~ scale(UPPSP_NEG_URGENCY), family = poisson, data = df_tot_depressed))
+
+vuong(p1d, z1d)
+
+#adding more variables into the mix
+summary(z1d_b1 <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(age) + scale(EDUCATION) + scale(Income_tot) + race + gender, data = df_tot_depressed))
+
+summary(z1d_b2 <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(age) + scale(EDUCATION) + scale(Income_tot) + race + gender + scale(dep), data = df_tot_depressed))
+
+vuong(z1d_b1, z1d)
+
+znull_d_b2 <- update(z1d_b2, . ~ 1)
+
+pchisq(2 * (logLik(z1d_b2) - logLik(znull_d_b2)), df = 14, lower.tail = FALSE)
+
+
+
+(z1d_b <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(age_first_att_zero) | scale(UPPSP_NEG_URGENCY), data = df_tot_depressed))
+
+vuong(z1d, z1d_b)
+
+summary(z1d_b <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) | scale(UPPSP_NEG_URGENCY) + scale(age_first_att_zero), data = df_tot_depressed))
+
+summary(z1d_b <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(dep) | scale(UPPSP_NEG_URGENCY) + scale(age_first_att_zero) + scale(dep), data = df_tot_depressed))
+
+#new models for Tim
+summary(z2 <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(UPPSP_LACK_OF_PERSEV) + scale(UPPSP_LACK_OF_PREMED), data = df_tot_depressed))
+
+stargazer(z2, type="html", out="z2_model_uppsp_scales.htm", digits = 2,single.row=TRUE, star.cutoffs = c(0.05, 0.01, 0.001))
+
+summary(z2b <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY) + scale(age_bl), data = df_tot_depressed))
+
+stargazer(z2b, type="html", out="z2_model_neg_urg_age.htm", digits = 2,single.row=TRUE, star.cutoffs = c(0.05, 0.01, 0.001))
+
+summary(z2c <- zeroinfl(attempts_tot ~ scale(UPPSP_LACK_OF_PERSEV) + scale(age_bl), data = df_tot_depressed))
+
+stargazer(z2c, type="html", out="z2_model_lack_pers_age.htm", digits = 2,single.row=TRUE, star.cutoffs = c(0.05, 0.01, 0.001))
+
+# #without ideators
+# df_tot_suicidal <- df_tot_depressed[df_tot_depressed$GROUP1245 != '2',]
+# 
+# summary(z1d <- zeroinfl(attempts_tot ~ scale(UPPSP_NEG_URGENCY), data = df_tot_suicidal))
+
+chars <- as.data.frame(df_tot[, c(66:69)])
+c1 <-
+  compareGroups::compareGroups(
+    chars,
+    y = df_tot$GROUP1245,
+    bivar = TRUE,
+    include.miss = FALSE)
+
+t1 <-
+  compareGroups::createTable(
+    c1,
+    # hide = c(sex = "FEMALE", list(race = c(
+    #   "WHITE", "ASIAN PACIFIC"
+    # ))),
+    hide.no = 0,
+    digits = 1,
+    show.n = TRUE,
+    show.p.mul = TRUE
+  )
+compareGroups::export2html(t1, "UPPSP_measures_groupwise.html")
+
+g_age <- ggplot(df_tot_att, aes(age_bl, age_first_att)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="age at baseline", y = "age at 1st attempt")
+
+g_att <- ggplot(df_tot_att, aes(age_bl, attempts_tot)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="age at baseline", y = "nb of attempts")
+
+g_age_att <- ggplot(df_tot_att, aes(age_first_att, attempts_tot)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="age at 1st attempt", y = "nb of attempts")
+
+g_age_uppsp_neg <- ggplot(df_tot_att, aes(age_bl, UPPSP.NEG.URGENCY)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="age at baseline", y = "UPPSP neg urgency")
+
+g_age_uppsp_premed <- ggplot(df_tot_att, aes(age_bl, UPPSP.LACK.OF.PREMED)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="age at baseline", y = "UPPSP lack of premed")
+
+g_age_uppsp_persev <- ggplot(df_tot_att, aes(age_bl, UPPSP.LACK.OF.PERSEV)) + geom_smooth(method = 'loess', span = 2, se = T) + geom_jitter() +
+  labs(x="age at baseline", y = "UPPSP lack of persev")
+
+
+grid.arrange(g_age,g_att,g_age_att, g_age_uppsp_neg,
+             layout_matrix = matrix(c(1,2,3,4), ncol=2, byrow=TRUE))
+
+ggplot(df_tot, aes(UPPSP_NEG_URGENCY)) + geom_histogram() + facet_wrap(~GROUP1245)
+ggplot(df_tot, aes(UPPSP_LACK_OF_PERSEV)) + geom_histogram(binwidth = 1) + facet_wrap(~GROUP1245)
+ggplot(df_tot, aes(UPPSP_LACK_OF_PERSEV)) + geom_histogram(binwidth = 1) + facet_wrap(~GROUP1245)
+
+g_negurg_att_tot <- ggplot(df_tot_att, aes(attempts_tot, UPPSP_NEG_URGENCY)) + geom_smooth(method = 'loess', span = 2, se = T)  + geom_point() +
+  labs(x="total attempts", y = "UPPSP neg urgency") + facet_wrap(~group_early)
+g_posurg_att_tot <- ggplot(df_tot_att, aes(attempts_tot, UPPSP_POS_URGENCY)) + geom_smooth(method = 'loess', span = 2, se = T)  + geom_point() +
+  labs(x="total attempts", y = "UPPSP POS urgency") + facet_wrap(~group_early)
+
+g_lackpremed_att_tot <- ggplot(df_tot_att, aes(attempts_tot, UPPSP_LACK_OF_PREMED)) + geom_smooth(method = 'loess', span = 2, se = T)  + geom_point() +
+  labs(x="total attempts", y = "UPPSP lack premed") + facet_wrap(~group_early)
+
+g_lackpersev_att_tot <- ggplot(df_tot_att, aes(attempts_tot, UPPSP_LACK_OF_PERSEV)) + geom_smooth(method = 'loess', span = 2, se = T)  + geom_point() +
+  labs(x="total attempts", y = "UPPSP lack persev") + facet_wrap(~group_early)
+
+
+
+
+
+#####################################################################
+#create variables representing number of days between baseline and the attempt
+#df_tot$test_int1 <- interval(df_tot$NAISSANCE, df_tot$BL_DATE1) / year()
+library(lubridate)
+#X is a vector of date objects (as.Date(x) ) and start is the baseline date which could has a length of one or the same length as X. 
+
+ df_tot$ATT_Int1 <- df_tot$BL_DATE1 - df_tot$NAISSANCE
+ df_tot$ATT_Int2 <- df_tot$BL_DATE2 - df_tot$NAISSANCE
+ df_tot$ATT_Int3 <- df_tot$BL_DATE3 - df_tot$NAISSANCE
+ df_tot$ATT_Int4 <- df_tot$BL_DATE4 - df_tot$NAISSANCE
+ df_tot$ATT_Int5 <- df_tot$BL_DATE5 - df_tot$NAISSANCE
+ df_tot$ATT_Int6 <- df_tot$FU_DATE1 - df_tot$NAISSANCE
+ df_tot$ATT_Int7 <- df_tot$FU_DATE2 - df_tot$NAISSANCE
+ df_tot$ATT_Int8 <- df_tot$FU_DATE3 - df_tot$NAISSANCE
+ df_tot$ATT_Int9 <- df_tot$FU_DATE4 - df_tot$NAISSANCE
+ df_tot$ATT_Int10 <- df_tot$MaxOfCDATE - df_tot$NAISSANCE
+
+ df_tot$ATT_Int1 <- as.period(as.interval(x =  df_tot$ATT_Int1, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int2 <- as.period(as.interval(x =  df_tot$ATT_Int2, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int3 <- as.period(as.interval(x =  df_tot$ATT_Int3, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int4 <- as.period(as.interval(x =  df_tot$ATT_Int4, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int5 <- as.period(as.interval(x =  df_tot$ATT_Int5, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int6 <- as.period(as.interval(x =  df_tot$ATT_Int6, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int7 <- as.period(as.interval(x =  df_tot$ATT_Int7, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int8 <- as.period(as.interval(x =  df_tot$ATT_Int8, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int9 <- as.period(as.interval(x =  df_tot$ATT_Int9, start = df_tot$NAISSANCE))$year
+ df_tot$ATT_Int10 <- as.period(as.interval(x =  df_tot$ATT_Int10, start = df_tot$NAISSANCE))$year
+ 
+#library(pastecs)
+#df_tot$att_Int1y <- daystoyears(as.POSIXt(df_tot$ATT_Int1), datemin=df_tot$NAISSANCE, dateformat="m/d/Y")
+
+
+df_tot <- transform(df_tot, ATT_Int1 = as.numeric(ATT_Int1), ATT_Int2 = as.numeric(ATT_Int2), ATT_Int3 = as.numeric(ATT_Int3), ATT_Int4 = as.numeric(ATT_Int4), ATT_Int5 = as.numeric(ATT_Int5), ATT_Int6 = as.numeric(ATT_Int6), ATT_Int7 = as.numeric(ATT_Int7), ATT_Int8 = as.numeric(ATT_Int8), ATT_Int9 = as.numeric(ATT_Int9),ATT_Int10 = as.numeric(ATT_Int10))
+
+#interval 1
+df_tot$int1 <- df_tot$ATT_Int1
+df_tot$int1[is.na(df_tot$int1)] <- df_tot$ATT_Int6[is.na(df_tot$int1)]
+df_tot$int1[is.na(df_tot$int1)] <- df_tot$ATT_Int10[is.na(df_tot$int1)]
+
+#interval 2
+df_tot$int2 <- NA
+
+for (i in 1:nrow(df_tot))
+{
+  if (df_tot$int1[i] == df_tot$ATT_Int1[i] & is.na(df_tot$ATT_Int1[i]) == FALSE & is.na(df_tot$int1[i]) == FALSE)
+  {df_tot$int2[i] <- df_tot$ATT_Int2[i]
+      if(is.na(df_tot$int2[i] == TRUE))
+      {df_tot$int2[i] <- df_tot$ATT_Int6[i]}
+      if(is.na(df_tot$int2[i] == TRUE))
+      {df_tot$int2[i] <- df_tot$ATT_Int10[i]}
+  }else if (df_tot$int1[i] == df_tot$ATT_Int6[i] & is.na(df_tot$ATT_Int6[i]) == FALSE & is.na(df_tot$int1[i]) == FALSE)
+  {df_tot$int2[i] <- df_tot$ATT_Int7[i]
+      if(is.na(df_tot$int2[i] == TRUE) & df_tot$ATT_Int6[i] != df_tot$ATT_Int10[i])
+      {df_tot$int2[i] <- df_tot$ATT_Int10[i]}
+} 
+} 
+
+#interval 3
+df_tot$int3 <- NA
+
+for (i in 1:nrow(df_tot))
+{
+  if (df_tot$int2[i] == df_tot$ATT_Int2[i] & is.na(df_tot$ATT_Int2[i]) == FALSE & is.na(df_tot$int2[i]) == FALSE)
+  {df_tot$int3[i] <- df_tot$ATT_Int3[i]
+      if(is.na(df_tot$int3[i] == TRUE))
+      {df_tot$int3[i] <- df_tot$ATT_Int6[i]}
+      if(is.na(df_tot$int3[i] == TRUE))
+      {df_tot$int3[i] <- df_tot$ATT_Int10[i]}
+  }else if (df_tot$int2[i] == df_tot$ATT_Int6[i] & is.na(df_tot$ATT_Int6[i]) == FALSE & is.na(df_tot$int2[i]) == FALSE)
+  {df_tot$int3[i] <- df_tot$ATT_Int7[i]
+      if(is.na(df_tot$int3[i] == TRUE) & df_tot$ATT_Int6[i] != df_tot$ATT_Int10[i])
+      {df_tot$int3[i] <- df_tot$ATT_Int10[i]}
+  }else if (df_tot$int2[i] == df_tot$ATT_Int7[i] & is.na(df_tot$ATT_Int7[i]) == FALSE & is.na(df_tot$int2[i]) == FALSE)
+  {df_tot$int3[i] <- df_tot$ATT_Int8[i]
+      if(is.na(df_tot$int3[i] == TRUE) & df_tot$ATT_Int7[i] != df_tot$ATT_Int10[i])
+      {df_tot$int3[i] <- df_tot$ATT_Int10[i]} 
+  } 
+}
+
+#interval 4
+df_tot$int4 <- NA
+
+for (i in 1:nrow(df_tot))
+{
+  if (df_tot$int3[i] == df_tot$ATT_Int3[i] & is.na(df_tot$ATT_Int3[i]) == FALSE & is.na(df_tot$int3[i]) == FALSE)
+  {df_tot$int4[i] <- df_tot$ATT_Int4[i]
+      if(is.na(df_tot$int4[i] == TRUE))
+      {df_tot$int4[i] <- df_tot$ATT_Int6[i]}
+      if(is.na(df_tot$int4[i] == TRUE))
+      {df_tot$int4[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int3[i] == df_tot$ATT_Int6[i] & is.na(df_tot$ATT_Int6[i]) == FALSE & is.na(df_tot$int3[i]) == FALSE)
+  {df_tot$int4[i] <- df_tot$ATT_Int7[i]
+      if(is.na(df_tot$int4[i] == TRUE) & df_tot$ATT_Int6[i] != df_tot$ATT_Int10[i])
+      {df_tot$int4[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int3[i] == df_tot$ATT_Int7[i] & is.na(df_tot$ATT_Int7[i]) == FALSE & is.na(df_tot$int3[i]) == FALSE)
+  {df_tot$int4[i] <- df_tot$ATT_Int8[i]
+      if(is.na(df_tot$int4[i] == TRUE) & df_tot$ATT_Int7[i] != df_tot$ATT_Int10[i])
+      {df_tot$int4[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int3[i] == df_tot$ATT_Int8[i] & is.na(df_tot$ATT_Int8[i]) == FALSE & is.na(df_tot$int3[i]) == FALSE)
+  {df_tot$int4[i] <- df_tot$ATT_Int9[i]
+      if(is.na(df_tot$int4[i] == TRUE) & df_tot$ATT_Int8[i] != df_tot$ATT_Int10[i])
+      {df_tot$int4[i] <- df_tot$ATT_Int10[i]}
+  }
+} 
+
+#interval 5
+df_tot$int5 <- NA
+
+for (i in 1:nrow(df_tot))
+{
+  if (df_tot$int4[i] == df_tot$ATT_Int4[i] & is.na(df_tot$ATT_Int4[i]) == FALSE & is.na(df_tot$int4[i]) == FALSE)
+  {df_tot$int5[i] <- df_tot$ATT_Int5[i]
+      if(is.na(df_tot$int5[i] == TRUE))
+      {df_tot$int5[i] <- df_tot$ATT_Int6[i]}
+      if(is.na(df_tot$int5[i] == TRUE))
+      {df_tot$int5[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int4[i] == df_tot$ATT_Int6[i] & is.na(df_tot$ATT_Int6[i]) == FALSE & is.na(df_tot$int4[i]) == FALSE)
+  {df_tot$int5[i] <- df_tot$ATT_Int7[i]
+      if(is.na(df_tot$int5[i] == TRUE) & df_tot$ATT_Int6[i] != df_tot$ATT_Int10[i])
+      {df_tot$int5[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int4[i] == df_tot$ATT_Int7[i] & is.na(df_tot$ATT_Int7[i]) == FALSE & is.na(df_tot$int4[i]) == FALSE)
+  {df_tot$int5[i] <- df_tot$ATT_Int8[i]
+      if(is.na(df_tot$int5[i] == TRUE) & df_tot$ATT_Int7[i] != df_tot$ATT_Int10[i])
+      {df_tot$int5[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int4[i] == df_tot$ATT_Int8[i] & is.na(df_tot$ATT_Int8[i]) == FALSE & is.na(df_tot$int4[i]) == FALSE)
+  {df_tot$int5[i] <- df_tot$ATT_Int9[i]
+      if(is.na(df_tot$int5[i] == TRUE) & df_tot$ATT_Int8[i] != df_tot$ATT_Int10[i])
+      {df_tot$int5[i] <- df_tot$ATT_Int10[i]}
+  }else if(df_tot$int4[i] == df_tot$ATT_Int9[i] & is.na(df_tot$ATT_Int9[i]) == FALSE & is.na(df_tot$int4[i]) == FALSE & df_tot$ATT_Int9[i] != df_tot$ATT_Int10[i])
+  {df_tot$int5[i] <- df_tot$ATT_Int10[i]}
+} 
+
+
+#melting dataset to get it in long format
+as.data.frame(df_tot)
+
+df_tot_long = reshape2::melt(df_tot,
+                         na.rm = FALSE,
+                         measure.vars = c("int1", "int2", "int3", "int4","int5"), value.name = 'tstop')
+
+df_tot_long$event <- as.numeric(df_tot_long$variable)
+
+df_tot_long <- df_tot_long %>% group_by(ID) %>% mutate(tstart = lag(tstop, n=1, order_by=event))
+df_tot_long$tstart[df_tot_long$event == 1] <- 0
+View(df_tot_long)
+
+#remove all useless columns with NAs only
+df_tot_long <- df_tot_long[!is.na(df_tot_long$tstop),]
+View(df_tot_long)
+
+#create status column
+df_tot_long$status <- 1
+df_tot_long$status[df_tot_long$tstop == df_tot_long$ATT_Int10] <- 0
+
+#create event_count column
+df_tot_long$status_inv <- 1 - df_tot_long$status
+df_tot_long$event_count <- df_tot_long$event - df_tot_long$status_inv
+
+save(df_tot_long, file="df_tot_long.Rda") 
+save(df_tot_long, file="df_tot_long_test.Rda") #saves test dataset w/ all att on different days
+#create date column with new intervals
+#df_tot_long$inv1_date <- as.POSIXlt(x, tz = "", origin, ...)
+
+df_tot_long$event_count_factor <- as.factor(df_tot_long$event_count)
+df_tot_long_depressed <- df_tot_long[df_tot_long$GROUP1245 != '1',]
+save(df_tot_long_depressed, file="df_tot_long_depressed.Rda")
+table(df_tot_long_depressed$event_count)
+
+###convert to years
+# df_tot_long_depressed$tstartY <-  floor(df_tot_long_depressed$tstart/365.25)
+# df_tot_long_depressed$tstopY <-  floor(df_tot_long_depressed$tstop/365.25)
+
+#### SURVIVAL
+#run AG model
+# model.1 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY, method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+# summary(model.1)
+# #run marginal means and rates
+# model.2 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + cluster(ID), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+# summary(model.2)
+# #run pwp-tt
+# model.3 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + cluster(ID) + strata(event), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+# summary(model.3)
+# #run pwp-gt
+# model.4 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + cluster(ID) + strata(event), method = "breslow",  data = df_tot_long_depressed)
+# summary(model.4)
+# 
+# model2.strat = coxph(Surv(rep(0, dim(data)[1])), tstop-start, status) ~ UPPSP.NEG.URGENCY*strata(event) + cluster(ID), method="breslow", data = df_tot_long_depressed)
+# summary(model2.strat)
+# 
+
+df_tot_long_depressed$check <- df_tot_long_depressed$tstart > df_tot_long_depressed$tstop
+table(df_tot_long_depressed$check)
+df_tot_long_depressed$check2 <- df_tot_long_depressed$tstart >= df_tot_long_depressed$tstop
+table(df_tot_long_depressed$check2)
+df_tot_long_depressed_test2 <- df_tot_long_depressed[df_tot_long_depressed$check2 == FALSE,]
+
+###survival revised code; Negative Urgency, age, and sex######
+#run AG model
+model.1 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + age_bl + gender, method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.1)
+#run marginal means and rates
+model.2 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + age_bl + gender + cluster(ID), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.2)
+#run pwp-tt
+model.3 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + age_bl + gender + cluster(ID) + strata(event), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.3)
+#run pwp-gt
+model.4=coxph(Surv(rep(0,dim(df_tot_long_depressed)[1]),tstop-tstart,status) ~ UPPSP.NEG.URGENCY + age_bl + gender + cluster(ID) + strata(event), method="breslow",  data = df_tot_long_depressed)
+summary(model.4)
+
+##################stratified models neg urg, age, sex
+#PWP-TT stratified model
+model.3strat =coxph(Surv(tstart, tstop, status) ~ gender + age_bl + UPPSP.NEG.URGENCY * strata(event) + cluster(ID), method="breslow", data= df_tot_long_depressed)
+summary(model.3strat)
+
+#PWP-GT stratified model
+model.4strat = coxph(Surv(rep(0, dim(df_tot_long_depressed)[1]), tstop-tstart, status) ~ gender + age_bl + UPPSP.NEG.URGENCY * strata(event) + cluster(ID), method="breslow", data=df_tot_long_depressed)
+summary(model.4strat)
+
+#frailty model
+model.frailty=coxph(Surv(tstop, status) ~ UPPSP.NEG.URGENCY + age_bl + gender + frailty(ID), data=df_tot_long_depressed)
+summary(model.frailty)
+
+
+##with premed and persev
+model.1 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PERSEV + UPPSP.LACK.OF.PREMED + age_bl + gender, method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.1)
+#run marginal means and rates
+model.2 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PERSEV + UPPSP.LACK.OF.PREMED+ age_bl + gender + cluster(ID), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.2)
+#run pwp-tt
+model.3 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PERSEV + UPPSP.LACK.OF.PREMED+ age_bl + gender + cluster(ID) + strata(event), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.3)
+#run pwp-gt
+model.4=coxph(Surv(rep(0,dim(df_tot_long_depressed)[1]),tstop-tstart,status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PERSEV + UPPSP.LACK.OF.PREMED + age_bl + gender + cluster(ID) + strata(event), method="breslow",  data = df_tot_long_depressed)
+summary(model.4)
+
+
+###survival revised code; Negative Urgency, Perseverance, Premeditation, age, and sex######
+#run AG model
+model.1 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender, method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.1)
+#run marginal means and rates
+model.2 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender + cluster(ID), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.2)
+#run pwp-tt
+model.3 = coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender + cluster(ID) + strata(event), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.3)
+#run pwp-gt
+model.4=coxph(Surv(rep(0,dim(df_tot_long_depressed)[1]),tstop-tstart,status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender + cluster(ID) + strata(event), method="breslow",  data = df_tot_long_depressed)
+summary(model.4)
+
+##################stratified models, NEG URG, PREMEDITATION, PERSEVERANCE
+#PWP-TT stratified model
+model.3strat =coxph(Surv(tstart, tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender * strata(event) + cluster(ID), method="breslow", data= df_tot_long_depressed)
+summary(model3.strat)
+
+#PWP-GT stratified model
+model.4strat = coxph(Surv(rep(0, dim(df_tot_long_depressed)[1]), tstop-tstart, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender * strata(event) + cluster(ID), method="breslow", data=df_tot_long_depressed)
+summary(model.4strat)
+
+#frailty model
+model.frailty=coxph(Surv(tstop, status) ~ UPPSP.NEG.URGENCY + UPPSP.LACK.OF.PREMED + UPPSP.LACK.OF.PERSEV + age_bl + gender + frailty(ID), data=df_tot_long_depressed)
+summary(model.frailty)
+
+
+
+
+
+###survival revised code; Barratt Total score, age and sex######
+#run AG model
+model.1 = coxph(Surv(tstart, tstop, status) ~ BIS_TOTMEAN + age_bl + gender, method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.1)
+#run marginal means and rates
+model.2 = coxph(Surv(tstart, tstop, status) ~ BIS_TOTMEAN + age_bl + gender + cluster(ID), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.2)
+#run pwp-tt
+model.3 = coxph(Surv(tstart, tstop, status) ~ BIS_TOTMEAN + age_bl + gender + cluster(ID) + strata(event), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.3)
+#run pwp-gt
+model.4=coxph(Surv(rep(0,dim(df_tot_long_depressed)[1]),tstop-tstart,status) ~ BIS_TOTMEAN + age_bl + gender + cluster(ID) + strata(event), method="breslow",  data = df_tot_long_depressed)
+summary(model.4)
+
+##################stratified models BIS TOTAL, age, sex
+#PWP-TT stratified model
+model.3strat =coxph(Surv(tstart, tstop, status) ~ BIS_TOTMEAN + age_bl + gender * strata(event) + cluster(ID), method="breslow", data= df_tot_long_depressed)
+summary(model3.strat)
+
+#PWP-GT stratified model
+model.4strat = coxph(Surv(rep(0, dim(df_tot_long_depressed)[1]), tstop-tstart, status) ~ BIS_TOTMEAN + age_bl + gender * strata(event) + cluster(ID), method="breslow", data=df_tot_long_depressed)
+summary(model.4strat)
+
+#frailty model
+model.frailty=coxph(Surv(tstop, status) ~ BIS_TOTMEAN + age_bl + gender + frailty(ID), data=df_tot_long_depressed)
+summary(model.frailty)
+
+
+
+
+
+
+
+
+###survival revised code; Barratt NONPLANNING, MOTOR, COGNITION age and sex######
+#run AG model
+model.1 = coxph(Surv(tstart, tstop, status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender, method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.1)
+#run marginal means and rates
+model.2 = coxph(Surv(tstart, tstop, status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender + cluster(ID), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.2)
+#run pwp-tt
+model.3 = coxph(Surv(tstart, tstop, status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender + cluster(ID) + strata(event), method = "breslow", robust = TRUE, data = df_tot_long_depressed)
+summary(model.3)
+#run pwp-gt
+model.4=coxph(Surv(rep(0,dim(df_tot_long_depressed)[1]),tstop-tstart,status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender + cluster(ID) + strata(event), method="breslow",  data = df_tot_long_depressed)
+summary(model.4)
+
+##################stratified models BIS TOTAL, age, sex
+#PWP-TT stratified model
+model.3strat =coxph(Surv(tstart, tstop, status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender * strata(event) + cluster(ID), method="breslow", data= df_tot_long_depressed)
+summary(model3.strat)
+
+#PWP-GT stratified model
+model.4strat = coxph(Surv(rep(0, dim(df_tot_long_depressed)[1]), tstop-tstart, status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender * strata(event) + cluster(ID), method="breslow", data=df_tot_long_depressed)
+summary(model.4strat)
+
+#frailty model
+model.frailty=coxph(Surv(tstop, status) ~ BIS_NONPLAN + BIS_MOTOR + BIS_COGNIT + age_bl + gender + frailty(ID), data=df_tot_long_depressed)
+summary(model.frailty)
+
+
+
+
+#### Corrplot dep & imp ############
+depimp <- as.data.frame(df_tot_long_depressed[, c(23, 31:35, 39:42, 52)])
+#head(just_rois)
+# cormat <- cor(na.omit(chars))
+# pdf_tot("trait correlations.pdf_tot", width=14, height=14)
+cors2 <- psych::corr.test(depimp, use = "pairwise",method="pearson", alpha=.05)
+
+par(mfrow=c(1,1))
+#pdf_tot("impulsivity k correlations.pdf_tot", width=14, height=14)
+corrplot::corrplot(cors2$r, cl.lim=c(-1,1),
+                   method = "shade", tl.cex = 1, type = "upper", tl.col = 'black',
+                   order = "AOE", diag = FALSE,  
+                   addCoef.col="black", addCoefasPercent = FALSE,
+                   p.mat = cors2$p, sig.level=0.01, insig = "blank")
